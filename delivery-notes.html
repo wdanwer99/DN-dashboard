@@ -34,12 +34,12 @@
                         <span class="links">Analytics</span>
                     </a>
                 </li>
-                <li class="navList">
+                <!-- <li class="navList">
                     <a href="comments.html">
                         <ion-icon name="chatbubbles-outline"></ion-icon>
                         <span class="links">Comments</span>
                     </a>
-                </li>
+                </li> -->
             </ul>
             <ul class="bottom-link">
                 <li>
@@ -72,8 +72,40 @@
                             <ion-icon name="cloud-upload-outline"></ion-icon>
                             Upload Excel Sheet
                         </button>
+                        <button class="upload-btn" onclick="toggleUploadForm()" style="margin-left: 10px;">
+                            <ion-icon name="add-outline"></ion-icon>
+                            Add Delivery Note
+                        </button>
+                        <button class="upload-btn" onclick="showSavedExcelSheets()" style="margin-left: 10px;">
+                            <ion-icon name="list-outline"></ion-icon>
+                            Show Saved Excel
+                        </button>
+                        <div class="search-container" style="margin: 10px 0;">
+                            <input type="text" id="searchInput" placeholder="Search delivery notes or Excel data...">
+                            <button class="search-btn" onclick="performSearch()">
+                                <ion-icon name="search-outline"></ion-icon>
+                                Search
+                            </button>
+                            <button class="back-btn" onclick="goBack()" style="display: none;">
+                                <ion-icon name="arrow-back-outline"></ion-icon>
+                                Back
+                            </button>
+                        </div>
                         <div id="uploadStatus" class="upload-status"></div>
                     </div>
+                    
+                    <div id="uploadForm" class="upload-form" style="display: none;">
+                        <h3>Add New Delivery Note</h3>
+                        <form id="deliveryNoteForm">
+                            <input type="text" id="dnNo" placeholder="DN Number" required>
+                            <input type="text" id="customer" placeholder="Customer" required>
+                            <input type="text" id="projectName" placeholder="Project Name" required>
+                            <input type="text" id="siteAddress" placeholder="Site Address" required>
+                            <button type="submit">Upload to Database</button>
+                            <button type="button" onclick="toggleUploadForm()">Cancel</button>
+                        </form>
+                    </div>
+                    
                     <div id="excelData" class="excel-data"></div>
                 </div>
             </div>
@@ -81,7 +113,7 @@
     </section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="delivery-notes.js"></script>
+    <script src="js/delivery-notes.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>
