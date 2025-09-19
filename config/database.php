@@ -1,8 +1,8 @@
 <?php
-$host = 'localhost';
-$dbname = 'admin_dashboard';
-$username = 'root';
-$password = '';
+$host = 'mysql5027.site4now.net';
+$dbname = 'db_9b86be_arpusof';
+$username = '9b86be_arpusof';
+$password = 'arpusoft@123';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
