@@ -1,46 +1,37 @@
-// Load dashboard data from database
-async function loadDashboardData() {
+// Load dashboard statistics
+async function loadDashboardStats() {
     try {
-        const [dashboardResponse, countResponse] = await Promise.all([
-            fetch('api/dashboard-data.php'),
-            fetch('api/delivery-count.php')
-        ]);
+        const response = await fetch('api/dashboard-stats.php');
+        const result = await response.json();
         
-        const dashboardData = await dashboardResponse.json();
-        const countData = await countResponse.json();
-        
-        if (dashboardData.success) {
-            updateDashboardStats(dashboardData.stats, countData.count);
-            updateRecentActivities(dashboardData.recent_activities);
+        if (result.success) {
+            updateCounter('delivery-count', result.data.delivery_notes);
+            updateCounter('sites-count', result.data.sites);
+            updateCounter('trucks-count', result.data.trucks);
+            updateCounter('items-count', result.data.items);
+        } else {
+            console.error('Error loading stats:', result.error);
+            updateCounter('delivery-count', 'Error');
+            updateCounter('sites-count', 'Error');
+            updateCounter('trucks-count', 'Error');
+            updateCounter('items-count', 'Error');
         }
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error('Error:', error);
+        updateCounter('delivery-count', 'Error');
+        updateCounter('sites-count', 'Error');
+        updateCounter('trucks-count', 'Error');
+        updateCounter('items-count', 'Error');
     }
 }
 
-function updateDashboardStats(stats, deliveryCount) {
-    document.getElementById('delivery-count').textContent = deliveryCount || 0;
-    document.querySelector('.box2 .number').textContent = stats.active_delivery_notes || 0;
-    document.querySelector('.box3 .number').textContent = stats.total_trucks || 0;
+function updateCounter(elementId, value) {
+    const element = document.getElementById(elementId);
+    element.classList.remove('loading');
+    element.classList.add('loaded');
+    element.textContent = value;
 }
 
-function updateRecentActivities(activities) {
-    const container = document.querySelector('.activityTable > div:last-child');
-    let html = '<table class="activity"><thead><tr><th>DN No</th><th>Customer</th><th>Status</th><th>Date</th></tr></thead><tbody>';
-    
-    activities.forEach((activity, index) => {
-        const rowClass = index % 2 === 1 ? 'odd' : '';
-        html += `<tr class="${rowClass}">
-            <td>${activity.dn_no}</td>
-            <td>${activity.Customer}</td>
-            <td>${activity.DN_Status}</td>
-            <td>${new Date(activity.created_at).toLocaleDateString()}</td>
-        </tr>`;
-    });
-    
-    html += '</tbody></table>';
-    container.innerHTML = html;
-}
 
-// Load data when page loads
-document.addEventListener('DOMContentLoaded', loadDashboardData);
+// Load stats when page loads
+document.addEventListener('DOMContentLoaded', loadDashboardStats);

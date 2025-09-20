@@ -449,10 +449,10 @@
             </a>
           </li>
           <li class="navList">
-            <a href="analytics.html">
+            <!-- <a href="analytics.html">
               <ion-icon name="analytics-outline"></ion-icon>
               <span class="links">Analytics</span>
-            </a>
+            </a> -->
           </li>
         </ul>
         <ul class="bottom-link">
@@ -834,39 +834,42 @@
         };
 
         return {
-          print_date: getCellValue(["B2", "A2"]) || getCurrentDateTime(),
+          print_date: formatDateTime(getCellValue(["B2", "A2"])) || getCurrentDateTime(),
+          purpose_of_delivery: getCellValue(["C3", "D3", "E3"]),
+          delivery_address: getCellValue(["C4", "D4", "E4"]),
+          site_Code: getCellValue(["C5", "D5", "E5"]),
+          contract_info: getCellValue(["C6", "D6", "E6"]),
+          Customer: getCellValue(["G8", "H8", "I8"]),
+          Customer_PO: getCellValue(["N8", "O8"]),
+          Customer_Tel: getCellValue(["M4", "L4"]),
+          Project_Name: getCellValue(["C7", "D7", "E7"]),
+          Project_Code: getCellValue(["N7", "O7"]),
+          Product_Category: getCellValue(["C8", "D8", "E8"]),
+          Product_Manager: getCellValue(["G9", "H9"]),
+          Special_Unloading_Req: getCellValue(["C9", "D9", "E9"]),
+          Installation_Environment: getCellValue(["C10", "D10", "E10"]),
+          Description_MR: getCellValue(["C11", "D11", "E11"]),
+          From_Warehouse: getCellValue(["C12", "D12", "E12"]),
+          Warehouse_Keeper: getCellValue(["G12", "H12"]),
+          Warehouse_Keeper_tel: getCellValue(["N12", "O12"]),
+          Description_DN: getCellValue(["C13", "D13", "E13"]),
+          Including_dangerous_goods: getCellValue(["C14", "D14", "E14"]) || "No",
+          pickup_address: getCellValue(["G3", "H3", "I3", "J3"]),
+          Site_Address: getCellValue(["G4", "H4", "I4", "J4"]),
           dn_no: getCellValue(["O1", "N1", "P1"]) || generateDNNumber(),
-          mr_no: getCellValue(["O2", "N2", "P2"]) || getCellValue(["O1", "N1"]),
-          purpose_of_delivery: getCellValue(["C3", "D3", "E3"]) || "",
-          delivery_address: getCellValue(["C4", "D4", "E4"]) || "",
-          site_code: getCellValue(["C5", "D5", "E5"]) || "",
-          contract_info: getCellValue(["C6", "D6", "E6"]) || "",
-          project_name: getCellValue(["C7", "D7", "E7"]) || "",
-          product_category: getCellValue(["C8", "D8", "E8"]) || "",
-          special_unloading_req: getCellValue(["C9", "D9", "E9"]) || "",
-          installation_environment: getCellValue(["C10", "D10", "E10"]) || "",
-          description_mr: getCellValue(["C11", "D11", "E11"]) || "",
-          from_warehouse: getCellValue(["C12", "D12", "E12"]) || "",
-          description_dn: getCellValue(["C13", "D13", "E13"]) || "",
-          including_dangerous_goods:
-            getCellValue(["C14", "D14", "E14"]) || "No",
-          pickup_address: getCellValue(["G3", "H3", "I3", "J3"]) || "",
-          site_address: getCellValue(["G4", "H4", "I4", "J4"]) || "",
-          request_arrived_date:
-            formatDateTime(getCellValue(["G5", "H5"])) || getCurrentDateTime(),
-          logistics_specialist: getCellValue(["G6", "H6"]) || "",
-          customer: getCellValue(["G8", "H8", "I8"]) || "",
-          product_manager: getCellValue(["G9", "H9"]) || "",
-          receiver_company_name: getCellValue(["M10", "N10", "O10"]) || "",
-          warehouse_keeper: getCellValue(["G12", "H12"]) || "",
-          receiver_name: getCellValue(["M3", "L3"]) || "",
-          customer_tel: getCellValue(["M4", "L4"]) || "",
-          request_shipment_date:
-            formatDateTime(getCellValue(["N5", "O5"])) || getCurrentDateTime(),
-          project_code: getCellValue(["N7", "O7"]) || "",
-          customer_po: getCellValue(["N8", "O8"]) || "",
-          warehouse_keeper_tel: getCellValue(["N12", "O12"]) || "",
-          logistics_specialist_tel: getCellValue(["H6", "I6"]) || "",
+          mr_no: getCellValue(["O2", "N2", "P2"]),
+          receiver_name: getCellValue(["M3", "L3"]),
+          receiver_tel: getCellValue(["M4", "L4"]),
+          Receiver_Company_Name: getCellValue(["M10", "N10", "O10"]),
+          request_arrived_date: formatDateTime(getCellValue(["G5", "H5"])),
+          request_shipment_date: formatDateTime(getCellValue(["N5", "O5"])),
+          logistics_specialist: getCellValue(["G6", "H6"]),
+          logistics_specialist_Tel: getCellValue(["H6", "I6"]),
+          received_location: getCellValue(["G13", "H13"]),
+          received_Auto_location: getCellValue(["G14", "H14"]),
+          Collected_location: getCellValue(["G15", "H15"]),
+          Collected_Auto_location: getCellValue(["G16", "H16"]),
+          Company_code: getCellValue(["A1", "B1"])
         };
       }
 
@@ -997,18 +1000,18 @@
 
         const formData = {
           dn_no: document.getElementById("dnNo").value,
-          mr_no: document.getElementById("mrNo").value,
-          customer: document.getElementById("customer").value,
-          project_name: document.getElementById("projectName").value,
-          site_address: document.getElementById("siteAddress").value,
-          contract_info: document.getElementById("contractInfo").value,
-          from_warehouse: document.getElementById("fromWarehouse").value,
-          receiver_name: document.getElementById("receiverName").value,
-          customer_tel: document.getElementById("customerTel").value,
-          purpose_of_delivery: document.getElementById("purposeDelivery").value,
-          print_date: getCurrentDateTime(),
-          request_arrived_date: getCurrentDateTime(),
-          request_shipment_date: getCurrentDateTime(),
+          Customer: document.getElementById("customer").value,
+          Project_Name: document.getElementById("projectName").value,
+          Site_Address: document.getElementById("siteAddress").value,
+          site_Code: document.getElementById("siteCode").value || '',
+          Customer_PO: document.getElementById("customerPO").value || '',
+          Customer_Tel: document.getElementById("customerTel").value || '',
+          Project_Code: document.getElementById("projectCode").value || '',
+          Product_Category: document.getElementById("productCategory").value || '',
+          Product_Manager: document.getElementById("productManager").value || '',
+          receiver_name: document.getElementById("receiverName").value || '',
+          receiver_tel: document.getElementById("receiverTel").value || '',
+          Receiver_Company_Name: document.getElementById("receiverCompany").value || ''
         };
 
         uploadToDatabase(formData);
@@ -1029,7 +1032,7 @@
           showStatus("🚀 Uploading to database...", "processing", true);
           updateProgress(20);
 
-          const response = await fetch("api/api/upload-delivery-note.php", {
+          const response = await fetch("api/upload-delivery-note.php", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1090,7 +1093,7 @@
       async function loadDeliveryNotes() {
         try {
           // Try to load from server
-          const response = await fetch("api/api/upload-delivery-note.php", {
+          const response = await fetch("api/upload-delivery-note.php", {
             method: "GET",
           });
 
@@ -1107,26 +1110,26 @@
         }
 
         // Fallback to demo data
-        allDeliveryNotes = [
-          {
-            id: 1,
-            dn_no: "KSD202409190001",
-            customer: "Demo Customer 1",
-            project_name: "Sample Project Alpha",
-            site_address: "Demo Location 1",
-            DN_Status: "Created",
-            created_at: "2024-09-19 10:00:00",
-          },
-          {
-            id: 2,
-            dn_no: "KSD202409190002",
-            customer: "Demo Customer 2",
-            project_name: "Sample Project Beta",
-            site_address: "Demo Location 2",
-            DN_Status: "Delivered",
-            created_at: "2024-09-19 09:30:00",
-          },
-        ];
+        // allDeliveryNotes = [
+        //   {
+        //     id: 1,
+        //     dn_no: "KSD202409190001",
+        //     customer: "Demo Customer 1",
+        //     project_name: "Sample Project Alpha",
+        //     site_address: "Demo Location 1",
+        //     DN_Status: "Created",
+        //     created_at: "2024-09-19 10:00:00",
+        //   },
+        //   {
+        //     id: 2,
+        //     dn_no: "KSD202409190002",
+        //     customer: "Demo Customer 2",
+        //     project_name: "Sample Project Beta",
+        //     site_address: "Demo Location 2",
+        //     DN_Status: "Delivered",
+        //     created_at: "2024-09-19 09:30:00",
+        //   },
+        // ];
         updateDeliveryNotesTable();
       }
 
