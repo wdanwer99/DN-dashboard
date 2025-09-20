@@ -275,7 +275,8 @@ nav .menu-items li.active a ion-icon {
 }
 
 .form-grid input,
-.form-grid textarea {
+.form-grid textarea,
+.form-grid select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #ddd;
@@ -285,8 +286,25 @@ nav .menu-items li.active a ion-icon {
 }
 
 .form-grid input:focus,
-.form-grid textarea:focus {
+.form-grid textarea:focus,
+.form-grid select:focus {
   outline: none;
   border-color: #1d64c2;
   box-shadow: 0 0 0 2px rgba(29, 100, 194, 0.1);
+}
+
+.form-grid button {
+  grid-column: 1 / -1;
+  padding: 12px 20px;
+  background-color: #1d64c2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.form-grid button:hover {
+  background-color: #1891d1;
 }

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Add Site - Admin</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <div class="logo-image">
+                <img src="" alt="">
+            </div>
+        </div>
+        <div class="menu-items">
+            <ul class="navLinks">
+                <li class="navList">
+                    <a href="dashboard.html">
+                        <ion-icon name="home-outline"></ion-icon>
+                        <span class="links">Dashboard</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="delivery-notes.html">
+                        <ion-icon name="folder-outline"></ion-icon>
+                        <span class="links">Delivery notes</span>
+                    </a>
+                </li>
+                <li class="navList active">
+                    <a href="add-site.html">
+                        <ion-icon name="location-outline"></ion-icon>
+                        <span class="links">Add Site</span>
+                    </a>
+                </li>
+                
+            </ul>
+            <ul class="bottom-link">
+                <li>
+                    <a href="profile.html">
+                        <ion-icon name="person-circle-outline"></ion-icon>
+                        <span class="links">Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="index.html">
+                        <ion-icon name="log-out-outline"></ion-icon>
+                        <span class="links">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="container">
+            <div class="data-table">
+                <div class="title">
+                    <ion-icon name="location-outline"></ion-icon>
+                    <span class="text">Add New Site</span>
+                </div>
+                <form id="siteForm" class="form-grid">
+                    <input type="text" name="site_Code" placeholder="Site Code" required>
+                    <input type="text" name="Site_Name" placeholder="Site Name" required>
+                    <input type="text" name="Tel_Operator" placeholder="Operator/Tenant" required>
+                    <input type="text" name="Address" placeholder="Full Address">
+                    <input type="number" name="GPS_Latitude" placeholder="GPS Latitude" step="0.000001">
+                    <input type="number" name="GPS_Longitude" placeholder="GPS Longitude" step="0.000001">
+                    <select name="Site_Type" required>
+                        <option value="">Select Site Type</option>
+                        <option value="Macro">Macro</option>
+                        <option value="Rooftop">Rooftop</option>
+                        <option value="Indoor">Indoor</option>
+                        <option value="Small Cell">Small Cell</option>
+                    </select>
+                    <textarea name="Access_Instructions" placeholder="Access Instructions"></textarea>
+                    <input type="text" name="Company_code" placeholder="Company Code">
+                    <button type="submit">Add Site</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.getElementById('siteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('api/add-site.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Site added successfully!');
+                    this.reset();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+    </script>
+
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>
