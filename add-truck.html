@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Add Truck - Admin</title>
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <div class="logo-image">
+          <img src="" alt="" />
+        </div>
+      </div>
+      <div class="menu-items">
+        <ul class="navLinks">
+          <li class="navList">
+            <a href="dashboard.html">
+              <ion-icon name="home-outline"></ion-icon>
+              <span class="links">Dashboard</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="delivery-notes.html">
+              <ion-icon name="folder-outline"></ion-icon>
+              <span class="links">Delivery notes</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="add-site.html">
+              <ion-icon name="location-outline"></ion-icon>
+              <span class="links">Add Site</span>
+            </a>
+          </li>
+          <li class="navList active">
+            <a href="add-truck.html">
+              <ion-icon name="car-outline"></ion-icon>
+              <span class="links">Add Truck</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="add_item.html">
+              <ion-icon name="cube-outline"></ion-icon>
+              <span class="links">Add Item</span>
+            </a>
+          </li>
+        </ul>
+        <ul class="bottom-link">
+          <li>
+            <a href="profile.html">
+              <ion-icon name="person-circle-outline"></ion-icon>
+              <span class="links">Profile</span>
+            </a>
+          </li>
+          <li>
+            <a href="index.html">
+              <ion-icon name="log-out-outline"></ion-icon>
+              <span class="links">Logout</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <section class="dashboard">
+      <div class="container">
+        <div class="data-table">
+          <div class="title">
+            <ion-icon name="car-outline"></ion-icon>
+            <span class="text">Add New Truck</span>
+          </div>
+          <form id="truckForm" class="form-grid">
+            <input
+              type="text"
+              name="truck_no"
+              placeholder="Truck Number / Plate"
+              required
+            />
+            <input
+              type="text"
+              name="driver_name"
+              placeholder="Driver Name"
+              required
+            />
+            <input type="tel" name="driver_phone" placeholder="Driver Phone" />
+            <input
+              type="number"
+              name="capacity"
+              placeholder="Capacity (tons/m³)"
+              step="0.01"
+            />
+            <select name="status" required>
+              <option value="">Select Status</option>
+              <option value="Available" selected>Available</option>
+              <option value="In Transit">In Transit</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Unavailable">Unavailable</option>
+            </select>
+            <input type="text" name="Company_code" placeholder="Company Code" />
+            <button type="submit">Add Truck</button>
+            <button type="button" onclick="loadTrucks()">
+              Show All Trucks
+            </button>
+          </form>
+        </div>
+
+        <div class="table-container" id="trucksTable">
+          <div class="table-header">
+            <ion-icon name="list-outline"></ion-icon>
+            All Trucks Database
+          </div>
+          <div class="table-scroll">
+            <table class="delivery-notes-table">
+              <thead>
+                <tr>
+                  <th>Truck No</th>
+                  <th>Driver Name</th>
+                  <th>Driver Phone</th>
+                  <th>Capacity</th>
+                  <th>Status</th>
+                  <th>Company</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trucksTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      let editingId = null;
+
+      document
+        .getElementById("truckForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+          if (editingId) {
+            formData.append("truck_id", editingId);
+          }
+
+          try {
+            const url = editingId
+              ? "api/update-truck.php"
+              : "api/add-truck.php";
+            const response = await fetch(url, {
+              method: "POST",
+              body: formData,
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert(
+                editingId
+                  ? "Truck updated successfully!"
+                  : "Truck added successfully!"
+              );
+              this.reset();
+              editingId = null;
+              loadTrucks();
+            } else {
+              alert("Error: " + result.error);
+            }
+          } catch (error) {
+            alert("Error: " + error.message);
+          }
+        });
+
+      async function loadTrucks() {
+        try {
+          const response = await fetch("api/get-trucks.php");
+          const result = await response.json();
+
+          if (result.success) {
+            displayTrucks(result.data);
+            document.getElementById("trucksTable").classList.remove("hidden");
+          } else {
+            alert("Error loading trucks: " + result.error);
+          }
+        } catch (error) {
+          alert("Error: " + error.message);
+        }
+      }
+
+      function displayTrucks(trucks) {
+        const tbody = document.getElementById("trucksTableBody");
+
+        if (trucks.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="empty-state">
+                <ion-icon name="car-outline" class="empty-icon"></ion-icon>
+                <br>No trucks found
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = trucks
+          .map(
+            (truck) => `
+            <tr>
+              <td><strong>${truck.truck_no || "N/A"}</strong></td>
+              <td>${truck.driver_name || "N/A"}</td>
+              <td>${truck.driver_phone || "N/A"}</td>
+              <td>${truck.capacity ? truck.capacity + " t/m³" : "N/A"}</td>
+              <td>
+                <span class="status-badge status-${getStatusClass(
+                  truck.status
+                )}">
+                  ${truck.status || "N/A"}
+                </span>
+              </td>
+              <td>${truck.Company_code || "N/A"}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="action-btn edit" onclick="editTruck(${
+                    truck.truck_id
+                  })" title="Edit Truck">
+                    <ion-icon name="create-outline"></ion-icon>
+                  </button>
+                  <button class="action-btn delete" onclick="deleteTruck(${
+                    truck.truck_id
+                  })" title="Delete Truck">
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `
+          )
+          .join("");
+      }
+
+      function getStatusClass(status) {
+        const statusMap = {
+          Available: "available",
+          "In Transit": "in-transit",
+          Maintenance: "maintenance",
+          Unavailable: "unavailable",
+        };
+        return statusMap[status] || "available";
+      }
+
+      async function editTruck(id) {
+        try {
+          const response = await fetch("api/get-trucks.php");
+          const result = await response.json();
+
+          if (result.success) {
+            const truck = result.data.find((t) => t.truck_id == id);
+            if (truck) {
+              document.querySelector('[name="truck_no"]').value =
+                truck.truck_no || "";
+              document.querySelector('[name="driver_name"]').value =
+                truck.driver_name || "";
+              document.querySelector('[name="driver_phone"]').value =
+                truck.driver_phone || "";
+              document.querySelector('[name="capacity"]').value =
+                truck.capacity || "";
+              document.querySelector('[name="status"]').value =
+                truck.status || "";
+              document.querySelector('[name="Company_code"]').value =
+                truck.Company_code || "";
+              editingId = id;
+            }
+          }
+        } catch (error) {
+          alert("Error loading truck: " + error.message);
+        }
+      }
+
+      async function deleteTruck(id) {
+        if (!confirm("Are you sure you want to delete this truck?")) return;
+
+        try {
+          const formData = new FormData();
+          formData.append("truck_id", id);
+
+          const response = await fetch("api/delete-truck.php", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert("Truck deleted successfully!");
+            loadTrucks();
+          } else {
+            alert("Error: " + result.error);
+          }
+        } catch (error) {
+          alert("Error: " + error.message);
+        }
+      }
+    </script>
+
+    <script
+      type="module"
+      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"
+    ></script>
+  </body>
+</html>

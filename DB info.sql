@@ -18,7 +18,7 @@ CREATE TABLE Site_Details (
     GPS_Longitude    DECIMAL(10, 6),             -- Example: 46.675300
     Site_Type        ENUM('Macro', 'Rooftop', 'Indoor', 'Small Cell') NOT NULL,
     Access_Instructions TEXT,                    -- Notes on site access
-     Company_code VARCHAR(50),
+    Company_code VARCHAR(50),
 	Created_At       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Updated_At       TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
                   ON UPDATE CURRENT_TIMESTAMP
@@ -34,7 +34,7 @@ CREATE TABLE trucks_info (
     driver_phone VARCHAR(50),           -- Contact phone
     capacity DECIMAL(10,2),             -- Capacity in tons or m³
     status ENUM('Available', 'In Transit', 'Maintenance', 'Unavailable') DEFAULT 'Available',
-	 Company_code VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	Company_code VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -77,7 +77,7 @@ CREATE TABLE Delivery_Notes (
 	Collected_location VARCHAR(255),
 	Collected_Auto_location VARCHAR(255),
 	DN_Status ENUM('Created', 'Received', 'Delivered', 'Collected', 'Closed') DEFAULT 'Created',
-	 Company_code VARCHAR(50),
+	Company_code VARCHAR(50),
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	Updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

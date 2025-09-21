@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
     <title>Delivery Notes - Admin</title>
-
   </head>
   <body>
     <nav>
@@ -29,12 +28,25 @@
               <span class="links">Delivery notes</span>
             </a>
           </li>
-         <li class="navList">
-                    <a href="add-site.html">
-                        <ion-icon name="location-outline"></ion-icon>
-                        <span class="links">Add Site</span>
-                    </a>
-                </li>
+          <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="add-site.html">
+              <ion-icon name="location-outline"></ion-icon>
+              <span class="links">Add Site</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="add-truck.html">
+              <ion-icon name="car-outline"></ion-icon>
+              <span class="links">Add Truck</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="add_item.html">
+              <ion-icon name="cube-outline"></ion-icon>
+              <span class="links">Add Item</span>
+            </a>
+          </li>
         </ul>
         <ul class="bottom-link">
           <li>
@@ -119,7 +131,7 @@
                 type="file"
                 id="excelUpload"
                 accept=".xlsx,.xls"
-class="hidden"
+                class="hidden"
               />
               <div class="icon">
                 <ion-icon name="cloud-upload-outline"></ion-icon>
@@ -415,7 +427,8 @@ class="hidden"
         };
 
         return {
-          print_date: formatDateTime(getCellValue(["B2", "A2"])) || getCurrentDateTime(),
+          print_date:
+            formatDateTime(getCellValue(["B2", "A2"])) || getCurrentDateTime(),
           purpose_of_delivery: getCellValue(["C3", "D3", "E3"]),
           delivery_address: getCellValue(["C4", "D4", "E4"]),
           site_Code: getCellValue(["C5", "D5", "E5"]),
@@ -434,7 +447,8 @@ class="hidden"
           Warehouse_Keeper: getCellValue(["G12", "H12"]),
           Warehouse_Keeper_tel: getCellValue(["N12", "O12"]),
           Description_DN: getCellValue(["C13", "D13", "E13"]),
-          Including_dangerous_goods: getCellValue(["C14", "D14", "E14"]) || "No",
+          Including_dangerous_goods:
+            getCellValue(["C14", "D14", "E14"]) || "No",
           pickup_address: getCellValue(["G3", "H3", "I3", "J3"]),
           Site_Address: getCellValue(["G4", "H4", "I4", "J4"]),
           dn_no: getCellValue(["O1", "N1", "P1"]) || generateDNNumber(),
@@ -450,7 +464,7 @@ class="hidden"
           received_Auto_location: getCellValue(["G14", "H14"]),
           Collected_location: getCellValue(["G15", "H15"]),
           Collected_Auto_location: getCellValue(["G16", "H16"]),
-          Company_code: getCellValue(["A1", "B1"])
+          Company_code: getCellValue(["A1", "B1"]),
         };
       }
 
@@ -584,15 +598,18 @@ class="hidden"
           Customer: document.getElementById("customer").value,
           Project_Name: document.getElementById("projectName").value,
           Site_Address: document.getElementById("siteAddress").value,
-          site_Code: document.getElementById("siteCode").value || '',
-          Customer_PO: document.getElementById("customerPO").value || '',
-          Customer_Tel: document.getElementById("customerTel").value || '',
-          Project_Code: document.getElementById("projectCode").value || '',
-          Product_Category: document.getElementById("productCategory").value || '',
-          Product_Manager: document.getElementById("productManager").value || '',
-          receiver_name: document.getElementById("receiverName").value || '',
-          receiver_tel: document.getElementById("receiverTel").value || '',
-          Receiver_Company_Name: document.getElementById("receiverCompany").value || ''
+          site_Code: document.getElementById("siteCode").value || "",
+          Customer_PO: document.getElementById("customerPO").value || "",
+          Customer_Tel: document.getElementById("customerTel").value || "",
+          Project_Code: document.getElementById("projectCode").value || "",
+          Product_Category:
+            document.getElementById("productCategory").value || "",
+          Product_Manager:
+            document.getElementById("productManager").value || "",
+          receiver_name: document.getElementById("receiverName").value || "",
+          receiver_tel: document.getElementById("receiverTel").value || "",
+          Receiver_Company_Name:
+            document.getElementById("receiverCompany").value || "",
         };
 
         uploadToDatabase(formData);
@@ -673,18 +690,18 @@ class="hidden"
 
       async function loadDeliveryNotes() {
         try {
-          const response = await fetch('api/get-delivery-notes.php');
+          const response = await fetch("api/get-delivery-notes.php");
           const result = await response.json();
-          
+
           if (result.success) {
             allDeliveryNotes = result.data;
             updateDeliveryNotesTable();
           } else {
-            console.error('Error loading delivery notes:', result.error);
+            console.error("Error loading delivery notes:", result.error);
             updateDeliveryNotesTable();
           }
         } catch (error) {
-          console.error('Error:', error);
+          console.error("Error:", error);
           updateDeliveryNotesTable();
         }
       }
@@ -814,11 +831,15 @@ class="hidden"
       // Additional functions
       async function showSavedExcelSheets() {
         try {
-          showStatus("📊 Loading delivery notes from database...", "processing", true);
-          
-          const response = await fetch('api/get-delivery-notes.php');
+          showStatus(
+            "📊 Loading delivery notes from database...",
+            "processing",
+            true
+          );
+
+          const response = await fetch("api/get-delivery-notes.php");
           const result = await response.json();
-          
+
           if (result.success) {
             allDeliveryNotes = result.data;
             currentView = "all";
@@ -828,11 +849,14 @@ class="hidden"
               "success"
             );
           } else {
-            throw new Error(result.error || 'Failed to load delivery notes');
+            throw new Error(result.error || "Failed to load delivery notes");
           }
         } catch (error) {
-          console.error('Error loading delivery notes:', error);
-          showStatus("❌ Error loading delivery notes: " + error.message, "error");
+          console.error("Error loading delivery notes:", error);
+          showStatus(
+            "❌ Error loading delivery notes: " + error.message,
+            "error"
+          );
         }
       }
 
