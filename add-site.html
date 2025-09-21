@@ -77,19 +77,49 @@
                     <textarea name="Access_Instructions" placeholder="Access Instructions"></textarea>
                     <input type="text" name="Company_code" placeholder="Company Code">
                     <button type="submit">Add Site</button>
+                    <button type="button" onclick="loadSites()">Show All Sites</button>
                 </form>
+            </div>
+            
+            <div class="table-container" id="sitesTable">
+                <div class="table-header">
+                    <ion-icon name="list-outline"></ion-icon>
+                    All Sites Database
+                </div>
+                <div class="table-scroll">
+                    <table class="delivery-notes-table">
+                        <thead>
+                            <tr>
+                                <th>Site Code</th>
+                                <th>Site Name</th>
+                                <th>Operator</th>
+                                <th>Type</th>
+                                <th>Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sitesTableBody">
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </section>
 
     <script>
+        let editingId = null;
+        
         document.getElementById('siteForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
+            if (editingId) {
+                formData.append('id', editingId);
+            }
             
             try {
-                const response = await fetch('api/add-site.php', {
+                const url = editingId ? 'api/update-site.php' : 'api/add-site.php';
+                const response = await fetch(url, {
                     method: 'POST',
                     body: formData
                 });
@@ -97,8 +127,10 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('Site added successfully!');
+                    alert(editingId ? 'Site updated successfully!' : 'Site added successfully!');
                     this.reset();
+                    editingId = null;
+                    loadSites();
                 } else {
                     alert('Error: ' + result.error);
                 }
@@ -106,6 +138,112 @@
                 alert('Error: ' + error.message);
             }
         });
+        
+        async function loadSites() {
+            try {
+                const response = await fetch('api/get-sites.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displaySites(result.data);
+                    document.getElementById('sitesTable').classList.remove('hidden');
+                } else {
+                    alert('Error loading sites: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function displaySites(sites) {
+            const tbody = document.getElementById('sitesTableBody');
+            
+            if (sites.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <ion-icon name="location-outline" class="empty-icon"></ion-icon>
+                            <br>No sites found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = sites.map(site => `
+                <tr>
+                    <td><strong>${site.site_Code || 'N/A'}</strong></td>
+                    <td>${site.Site_Name || 'N/A'}</td>
+                    <td>${site.Tel_Operator || 'N/A'}</td>
+                    <td><span class="status-badge status-${(site.Site_Type || 'macro').toLowerCase().replace(' ', '-')}">${site.Site_Type || 'N/A'}</span></td>
+                    <td title="${site.Address || 'N/A'}">${truncateText(site.Address || 'N/A', 30)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn edit" onclick="editSite(${site.id})" title="Edit Site">
+                                <ion-icon name="create-outline"></ion-icon>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteSite(${site.id})" title="Delete Site">
+                                <ion-icon name="trash-outline"></ion-icon>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function editSite(id) {
+            try {
+                const response = await fetch('api/get-sites.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const site = result.data.find(s => s.id == id);
+                    if (site) {
+                        document.querySelector('[name="site_Code"]').value = site.site_Code || '';
+                        document.querySelector('[name="Site_Name"]').value = site.Site_Name || '';
+                        document.querySelector('[name="Tel_Operator"]').value = site.Tel_Operator || '';
+                        document.querySelector('[name="Address"]').value = site.Address || '';
+                        document.querySelector('[name="GPS_Latitude"]').value = site.GPS_Latitude || '';
+                        document.querySelector('[name="GPS_Longitude"]').value = site.GPS_Longitude || '';
+                        document.querySelector('[name="Site_Type"]').value = site.Site_Type || '';
+                        document.querySelector('[name="Access_Instructions"]').value = site.Access_Instructions || '';
+                        document.querySelector('[name="Company_code"]').value = site.Company_code || '';
+                        editingId = id;
+                    }
+                }
+            } catch (error) {
+                alert('Error loading site: ' + error.message);
+            }
+        }
+        
+        async function deleteSite(id) {
+            if (!confirm('Are you sure you want to delete this site?')) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('id', id);
+                
+                const response = await fetch('api/delete-site.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Site deleted successfully!');
+                    loadSites();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function truncateText(text, maxLength) {
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        }
     </script>
 
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>

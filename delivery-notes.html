@@ -6,426 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
     <title>Delivery Notes - Admin</title>
-    <style>
-     
-      .upload-section {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 25px;
-        margin: 20px 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
 
-      .upload-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        align-items: center;
-        margin-bottom: 20px;
-      }
-
-      .upload-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .upload-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      .upload-btn.secondary {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-      }
-
-      .upload-btn.danger {
-        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-      }
-
-      .search-container {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex: 1;
-        min-width: 300px;
-      }
-
-      .search-container input {
-        flex: 1;
-        padding: 12px 15px;
-        border: 2px solid #e1e5e9;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: border-color 0.3s ease;
-      }
-
-      .search-container input:focus {
-        outline: none;
-        border-color: #667eea;
-      }
-
-      .search-btn,
-      .back-btn {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 12px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 14px;
-        transition: all 0.3s ease;
-      }
-
-      .search-btn:hover,
-      .back-btn:hover {
-        background: #5a6268;
-        transform: translateY(-1px);
-      }
-
-      .upload-status {
-        margin: 15px 0;
-        padding: 15px;
-        border-radius: 8px;
-        font-weight: 500;
-        text-align: center;
-        display: none;
-      }
-
-      .upload-status.success {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        color: #155724;
-        border: 1px solid #c3e6cb;
-      }
-
-      .upload-status.error {
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-      }
-
-      .upload-status.processing {
-        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-        color: #0c5460;
-        border: 1px solid #bee5eb;
-      }
-
-      .upload-form {
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        margin: 20px 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border: 2px solid #e9ecef;
-      }
-
-      .upload-form h3 {
-        color: #495057;
-        margin-bottom: 20px;
-        font-size: 1.4em;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .upload-form form {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 15px;
-      }
-
-      .upload-form input,
-      .upload-form textarea {
-        padding: 12px 15px;
-        border: 2px solid #e1e5e9;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: border-color 0.3s ease;
-      }
-
-      .upload-form input:focus,
-      .upload-form textarea:focus {
-        outline: none;
-        border-color: #667eea;
-      }
-
-      .upload-form button {
-        padding: 12px 20px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-      }
-
-      .upload-form button[type="submit"] {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-      }
-
-      .upload-form button[type="button"] {
-        background: #6c757d;
-        color: white;
-      }
-
-      .excel-data {
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        margin: 20px 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        max-height: 600px;
-        overflow-y: auto;
-      }
-
-      .excel-data h3 {
-        color: #495057;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 1.4em;
-      }
-
-      .data-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-      }
-
-      .data-item {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 4px solid #667eea;
-        transition: transform 0.2s ease;
-      }
-
-      .data-item:hover {
-        transform: translateX(5px);
-      }
-
-      .data-item strong {
-        color: #495057;
-        display: block;
-        margin-bottom: 8px;
-        font-size: 0.9em;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      .data-item span {
-        color: #6c757d;
-        word-break: break-word;
-        font-size: 0.95em;
-      }
-
-      .progress-bar {
-        width: 100%;
-        height: 6px;
-        background: #e9ecef;
-        border-radius: 3px;
-        overflow: hidden;
-        margin: 15px 0;
-        display: none;
-      }
-
-      .progress-fill {
-        height: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        width: 0%;
-        transition: width 0.3s ease;
-      }
-
-      .loading-spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top-color: #fff;
-        animation: spin 1s ease-in-out infinite;
-        margin-right: 8px;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .table-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin: 20px 0;
-      }
-
-      .table-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        font-size: 1.2em;
-        font-weight: 500;
-      }
-
-      .delivery-notes-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .delivery-notes-table th,
-      .delivery-notes-table td {
-        padding: 12px 15px;
-        text-align: left;
-        border-bottom: 1px solid #e9ecef;
-      }
-
-      .delivery-notes-table th {
-        background: #f8f9fa;
-        font-weight: 600;
-        color: #495057;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-
-      .delivery-notes-table tr:hover {
-        background: #f8f9fa;
-      }
-
-      .status-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: 500;
-        text-transform: uppercase;
-      }
-
-      .status-created {
-        background: #fff3cd;
-        color: #856404;
-      }
-
-      .status-received {
-        background: #d1ecf1;
-        color: #0c5460;
-      }
-
-      .status-delivered {
-        background: #d4edda;
-        color: #155724;
-      }
-
-      .status-collected {
-        background: #e2e3e5;
-        color: #383d41;
-      }
-
-      .status-closed {
-        background: #f8d7da;
-        color: #721c24;
-      }
-
-      .action-buttons {
-        display: flex;
-        gap: 8px;
-      }
-
-      .action-btn {
-        padding: 6px 12px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        transition: all 0.2s ease;
-      }
-
-      .action-btn.edit {
-        background: #ffc107;
-        color: #212529;
-      }
-
-      .action-btn.delete {
-        background: #dc3545;
-        color: white;
-      }
-
-      .action-btn.view {
-        background: #17a2b8;
-        color: white;
-      }
-
-      .drag-drop-area {
-        border: 3px dashed #dee2e6;
-        border-radius: 12px;
-        padding: 40px 20px;
-        text-align: center;
-        margin: 20px 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #fafafa;
-      }
-
-      .drag-drop-area:hover,
-      .drag-drop-area.dragover {
-        border-color: #667eea;
-        background: #f0f8ff;
-        transform: translateY(-2px);
-      }
-
-      .drag-drop-area .icon {
-        font-size: 3em;
-        color: #667eea;
-        margin-bottom: 15px;
-      }
-
-      .drag-drop-area .text {
-        font-size: 1.1em;
-        color: #6c757d;
-        margin-bottom: 10px;
-      }
-
-      .drag-drop-area .subtext {
-        font-size: 0.9em;
-        color: #adb5bd;
-      }
-
-      @media (max-width: 768px) {
-        .upload-container {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .search-container {
-          min-width: auto;
-        }
-
-        .data-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .upload-form form {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
   </head>
   <body>
     <nav>
@@ -499,7 +80,7 @@
                 class="upload-btn danger"
                 onclick="clearAllData()"
                 id="clearBtn"
-                style="display: none"
+                class="hidden"
               >
                 <ion-icon name="trash-outline"></ion-icon>
                 Clear Data
@@ -520,7 +101,7 @@
                   class="back-btn"
                   onclick="goBack()"
                   id="backBtn"
-                  style="display: none"
+                  class="hidden"
                 >
                   <ion-icon name="arrow-back-outline"></ion-icon>
                   Back
@@ -538,7 +119,7 @@
                 type="file"
                 id="excelUpload"
                 accept=".xlsx,.xls"
-                style="display: none"
+class="hidden"
               />
               <div class="icon">
                 <ion-icon name="cloud-upload-outline"></ion-icon>
@@ -558,7 +139,7 @@
             <div id="uploadStatus" class="upload-status"></div>
 
             <!-- Manual Upload Form -->
-            <div id="uploadForm" class="upload-form" style="display: none">
+            <div id="uploadForm" class="upload-form hidden">
               <h3>
                 <ion-icon name="add-circle-outline"></ion-icon>
                 Add New Delivery Note
@@ -617,13 +198,13 @@
             </div>
 
             <!-- Processed Excel Data Display -->
-            <div id="excelData" class="excel-data" style="display: none">
+            <div id="excelData" class="excel-data hidden">
               <h3>
                 <ion-icon name="document-text-outline"></ion-icon>
                 Processed Delivery Note Data
               </h3>
               <div id="excelDataContent"></div>
-              <div style="text-align: center; margin-top: 20px">
+              <div class="button-center">
                 <button
                   class="upload-btn"
                   onclick="uploadProcessedData()"
@@ -650,7 +231,7 @@
               <ion-icon name="list-outline"></ion-icon>
               Delivery Notes Database
             </div>
-            <div style="overflow-x: auto">
+            <div class="table-scroll">
               <table class="delivery-notes-table">
                 <thead>
                   <tr>
@@ -1092,45 +673,20 @@
 
       async function loadDeliveryNotes() {
         try {
-          // Try to load from server
-          const response = await fetch("api/upload-delivery-note.php", {
-            method: "GET",
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-              allDeliveryNotes = result.data;
-              updateDeliveryNotesTable();
-              return;
-            }
+          const response = await fetch('api/get-delivery-notes.php');
+          const result = await response.json();
+          
+          if (result.success) {
+            allDeliveryNotes = result.data;
+            updateDeliveryNotesTable();
+          } else {
+            console.error('Error loading delivery notes:', result.error);
+            updateDeliveryNotesTable();
           }
         } catch (error) {
-          console.log("Could not load from server, using demo data");
+          console.error('Error:', error);
+          updateDeliveryNotesTable();
         }
-
-        // Fallback to demo data
-        // allDeliveryNotes = [
-        //   {
-        //     id: 1,
-        //     dn_no: "KSD202409190001",
-        //     customer: "Demo Customer 1",
-        //     project_name: "Sample Project Alpha",
-        //     site_address: "Demo Location 1",
-        //     DN_Status: "Created",
-        //     created_at: "2024-09-19 10:00:00",
-        //   },
-        //   {
-        //     id: 2,
-        //     dn_no: "KSD202409190002",
-        //     customer: "Demo Customer 2",
-        //     project_name: "Sample Project Beta",
-        //     site_address: "Demo Location 2",
-        //     DN_Status: "Delivered",
-        //     created_at: "2024-09-19 09:30:00",
-        //   },
-        // ];
-        updateDeliveryNotesTable();
       }
 
       function updateDeliveryNotesTable(notesToShow = null) {
@@ -1256,13 +812,28 @@
       }
 
       // Additional functions
-      function showSavedExcelSheets() {
-        currentView = "all";
-        updateDeliveryNotesTable();
-        showStatus(
-          `Showing ${allDeliveryNotes.length} delivery notes from database`,
-          "success"
-        );
+      async function showSavedExcelSheets() {
+        try {
+          showStatus("📊 Loading delivery notes from database...", "processing", true);
+          
+          const response = await fetch('api/get-delivery-notes.php');
+          const result = await response.json();
+          
+          if (result.success) {
+            allDeliveryNotes = result.data;
+            currentView = "all";
+            updateDeliveryNotesTable();
+            showStatus(
+              `✅ Loaded ${allDeliveryNotes.length} delivery notes from database`,
+              "success"
+            );
+          } else {
+            throw new Error(result.error || 'Failed to load delivery notes');
+          }
+        } catch (error) {
+          console.error('Error loading delivery notes:', error);
+          showStatus("❌ Error loading delivery notes: " + error.message, "error");
+        }
       }
 
       function clearExcelData() {
