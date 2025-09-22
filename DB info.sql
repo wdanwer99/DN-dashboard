@@ -45,40 +45,40 @@ CREATE TABLE Delivery_Notes (
     purpose_of_delivery TEXT,
     delivery_address TEXT,
     site_Code VARCHAR(255),-- gggg
-    contract_info VARCHAR(255), 00hjjbbn
-	Customer VARCHAR(255), jgjgjhghj
-	Customer_PO VARCHAR(255), gjgjhgj
+    contract_info VARCHAR(255), --00hjjbbn
+	Customer VARCHAR(255), --jgjgjhghj
+	Customer_PO VARCHAR(255), --gjgjhgj
 	Customer_Tel  VARCHAR(255),	
-	Project_Name VARCHAR(255), ghjghjgj
+	Project_Name VARCHAR(255), --ghjghjgj
 	Project_Code VARCHAR(255),
 	Product_Category VARCHAR(255),
-	Product_Manager VARCHAR(255), jhgjhghj
+	Product_Manager VARCHAR(255), --jhgjhghj
 	Special_Unloading_Req VARCHAR(255),
 	Installation_Environment VARCHAR(255),
 	Description_MR VARCHAR(255),
-	From_Warehouse VARCHAR(255), jhgjhgjj
-	Warehouse_Keeper VARCHAR(255), ghfhfh
+	From_Warehouse VARCHAR(255), --jhgjhgjj
+	Warehouse_Keeper VARCHAR(255), --ghfhfh
 	Warehouse_Keeper_tel VARCHAR(50),
 	Description_DN VARCHAR(255),
 	Including_dangerous_goods VARCHAR(255),
 	pickup_address TEXT,
 	Site_Address VARCHAR(255),
-	dn_no VARCHAR(50), gjhghjghjhj
-    mr_no VARCHAR(50), hffghfhhg
+	dn_no VARCHAR(50), --gjhghjghjhj
+    mr_no VARCHAR(50), --hffghfhhg
     receiver_name VARCHAR(255),
     receiver_tel VARCHAR(50),
 	Receiver_Company_Name VARCHAR(255),
-    request_arrived_date DATETIME, nggjhghj
+    request_arrived_date DATETIME, --nggjhghj
     request_shipment_date DATETIME,
-    logistics_specialist VARCHAR(255), ggjhghj
+    logistics_specialist VARCHAR(255), --ggjhghj
 	logistics_specialist_Tel VARCHAR(255),
-	received_location VARCHAR(255), yytyut
+	received_location VARCHAR(255), --yytyut
 	received_Auto_location VARCHAR(255),
-    Delivered_location VARCHAR(255), hjgjhgjhg
+    Delivered_location VARCHAR(255), --hjgjhgjhg
 	Delivered_Auto_location VARCHAR(255),
-	Collected_location VARCHAR(255), jyututu
+	Collected_location VARCHAR(255), --jyututu
 	Collected_Auto_location VARCHAR(255),
-	DN_Status ENUM('Created', 'Received', 'Delivered', 'Collected', 'Closed') DEFAULT 'Created', hjghj
+	DN_Status ENUM('Created', 'Received', 'Delivered', 'Collected', 'Closed') DEFAULT 'Created', --hjghj
 	Company_code VARCHAR(50),
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	Updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

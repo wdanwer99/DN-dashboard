@@ -11,12 +11,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = file_get_contents('php://input');
         error_log("Raw input: " . $input);
         
-        $data = json_decode($input, true);
-        error_log("Decoded data: " . print_r($data, true));
+        $requestData = json_decode($input, true);
+        error_log("Decoded data: " . print_r($requestData, true));
         
-        if (!$data) {
+        if (!$requestData) {
             throw new Exception('Invalid JSON data received');
         }
+        
+        // Handle both old format (direct data) and new format (deliveryNote + items)
+        $data = isset($requestData['deliveryNote']) ? $requestData['deliveryNote'] : $requestData;
+        $items = isset($requestData['items']) ? $requestData['items'] : [];
         
         $stmt = $pdo->prepare("INSERT INTO Delivery_Notes (
             print_date, purpose_of_delivery, delivery_address, site_Code, contract_info,
@@ -75,10 +79,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($result) {
             $insertId = $pdo->lastInsertId();
+            $itemsInserted = 0;
+            
+            // Insert items if provided
+            if (!empty($items)) {
+                $itemStmt = $pdo->prepare("INSERT INTO Dn_items (
+                    dn_no, site_code, item_code, qty, item_description, Company_code
+                ) VALUES (?, ?, ?, ?, ?, ?)");
+                
+                foreach ($items as $item) {
+                    // Ensure required fields are not empty
+                    $itemCode = trim($item['item_code'] ?? '');
+                    $qty = floatval($item['qty'] ?? 0);
+                    
+                    if (empty($itemCode) && $qty == 0) {
+                        continue; // Skip empty items
+                    }
+                    
+                    $itemResult = $itemStmt->execute([
+                        $item['dn_no'] ?? $data['dn_no'],
+                        $item['site_code'] ?? $data['site_Code'],
+                        $itemCode ?: 'N/A',
+                        $qty,
+                        $item['item_description'] ?? '',
+                        $item['Company_code'] ?? $data['Company_code'] ?? '1000'
+                    ]);
+                    
+                    if ($itemResult) {
+                        $itemsInserted++;
+                    }
+                }
+            }
+            
             echo json_encode([
                 'success' => true, 
                 'message' => 'Delivery note uploaded successfully',
-                'id' => $insertId
+                'id' => $insertId,
+                'dn_no' => $data['dn_no'],
+                'items_inserted' => $itemsInserted,
+                'total_items' => count($items)
             ]);
         } else {
             $errorInfo = $stmt->errorInfo();

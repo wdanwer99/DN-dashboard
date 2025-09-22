@@ -80,10 +80,10 @@
                 <ion-icon name="cloud-upload-outline"></ion-icon>
                 Upload Excel Sheet
               </button>
-              <button class="upload-btn secondary" onclick="toggleUploadForm()">
+              <!-- <button class="upload-btn secondary" onclick="toggleUploadForm()">
                 <ion-icon name="add-outline"></ion-icon>
                 Add Delivery Note
-              </button>
+              </button> -->
               <button class="upload-btn" onclick="showSavedExcelSheets()">
                 <ion-icon name="list-outline"></ion-icon>
                 Show All Notes
@@ -121,9 +121,20 @@
               </div>
             </div>
 
+            <!-- Site Selection for Excel Upload -->
+            <div class="upload-form">
+              <h3>
+                <ion-icon name="location-outline"></ion-icon>
+                Select Site to View Delivery Notes
+              </h3>
+              <select id="excelSiteSelect" required onchange="loadDeliveryNotesBySite()">
+                <option value="">Select Site First</option>
+              </select>
+            </div>
+
             <!-- Drag and Drop Area -->
             <div
-              class="drag-drop-area"
+              class="drag-drop-area disabled"
               onclick="triggerFileUpload()"
               id="dragDropArea"
             >
@@ -132,11 +143,12 @@
                 id="excelUpload"
                 accept=".xlsx,.xls"
                 class="hidden"
+                disabled
               />
               <div class="icon">
                 <ion-icon name="cloud-upload-outline"></ion-icon>
               </div>
-              <div class="text">Drag and drop your Excel file here</div>
+              <div class="text">Select a site first, then drag and drop your Excel file here</div>
               <div class="subtext">
                 or click to browse for files (.xlsx, .xls)
               </div>
@@ -171,11 +183,14 @@
                   placeholder="Project Name"
                   required
                 />
+                <select id="siteSelect" required>
+                  <option value="">Select Site</option>
+                </select>
                 <input
                   type="text"
                   id="siteAddress"
                   placeholder="Site Address"
-                  required
+                  readonly
                 />
                 <input
                   type="text"
@@ -226,9 +241,10 @@
                   Upload to Database
                 </button>
                 <button
-                  class="upload-btn secondary"
+                  class="upload-btn secondary hidden"
                   onclick="downloadJSON()"
                   id="downloadJsonBtn"
+                  style="display: none;"
                 >
                   <ion-icon name="download-outline"></ion-icon>
                   Download JSON
@@ -237,31 +253,10 @@
             </div>
           </div>
 
-          <!-- Delivery Notes Table -->
-          <div class="table-container" id="deliveryNotesTable">
-            <div class="table-header">
-              <ion-icon name="list-outline"></ion-icon>
-              Delivery Notes Database
-            </div>
-            <div class="table-scroll">
-              <table class="delivery-notes-table">
-                <thead>
-                  <tr>
-                    <th>DN No</th>
-                    <th>Customer</th>
-                    <th>Project</th>
-                    <th>Site Address</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="deliveryNotesTableBody">
-                  <!-- Dynamic content will be inserted here -->
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <!-- Error Messages -->
+          <div id="errorMessage" class="upload-status error hidden"></div>
+
+
         </div>
       </div>
     </section>
@@ -273,6 +268,10 @@
       let processedDeliveryNote = null;
       let allDeliveryNotes = [];
       let currentView = "all";
+      let currentPage = 1;
+      let totalPages = 1;
+      let currentSiteCode = '';
+      let showingAll = false;
 
       // DOM elements
       const fileInput = document.getElementById("excelUpload");
@@ -288,7 +287,170 @@
       // Initialize the application
       document.addEventListener("DOMContentLoaded", function () {
         initializeEventListeners();
-        loadDeliveryNotes();
+        loadSites();
+      });
+
+      async function loadDeliveryNotesBySite() {
+        const siteCode = document.getElementById('excelSiteSelect').value;
+        if (!siteCode) {
+          resetTable();
+          return;
+        }
+        
+        currentSiteCode = siteCode;
+        currentPage = 1;
+        showingAll = false;
+        
+        // Show loading state
+        document.getElementById('deliveryNotesTableBody').innerHTML = `
+          <tr>
+            <td colspan="10" class="empty-state">
+              <div class="loading-spinner"></div>
+              <br>Loading delivery notes for ${siteCode}...
+            </td>
+          </tr>
+        `;
+        
+        await fetchDeliveryNotes();
+      }
+
+      async function fetchDeliveryNotes() {
+        try {
+          showError('');
+          const limit = showingAll ? 1000 : 10;
+          const response = await fetch(`api/get-delivery-notes-by-site.php?site_code=${currentSiteCode}&page=${currentPage}&limit=${limit}`);
+          const result = await response.json();
+          
+          if (result.success) {
+            allDeliveryNotes = result.data;
+            totalPages = result.totalPages;
+            updateDeliveryNotesTable();
+            updatePagination(result);
+            document.getElementById('tableTitle').textContent = `Delivery Notes for Site: ${currentSiteCode}`;
+          } else {
+            throw new Error(result.error);
+          }
+        } catch (error) {
+          showError('Error loading delivery notes: ' + error.message);
+        }
+      }
+
+      function resetTable() {
+        document.getElementById('deliveryNotesTableBody').innerHTML = `
+          <tr>
+            <td colspan="17" class="empty-state">
+              <ion-icon name="location-outline" class="empty-icon"></ion-icon>
+              <br>Select a site to view delivery notes
+            </td>
+          </tr>
+        `;
+        document.getElementById('tableTitle').textContent = 'Select a site to view delivery notes';
+        document.getElementById('pagination').style.display = 'none';
+      }
+
+      function changePage(direction) {
+        const newPage = currentPage + direction;
+        if (newPage >= 1 && newPage <= totalPages) {
+          currentPage = newPage;
+          fetchDeliveryNotes();
+        }
+      }
+
+      function showAllNotes() {
+        showingAll = true;
+        currentPage = 1;
+        fetchDeliveryNotes();
+      }
+
+      function updatePagination(result) {
+        const pagination = document.getElementById('pagination');
+        const pageInfo = document.getElementById('pageInfo');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        if (result.total > 0) {
+          pagination.style.display = 'flex';
+          pageInfo.textContent = showingAll ? 
+            `Showing all ${result.total} notes` : 
+            `Page ${result.page} of ${result.totalPages} (${result.total} total)`;
+          prevBtn.disabled = result.page <= 1 || showingAll;
+          nextBtn.disabled = result.page >= result.totalPages || showingAll;
+        } else {
+          pagination.style.display = 'none';
+        }
+      }
+
+      function showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        if (message) {
+          errorDiv.textContent = message;
+          errorDiv.classList.remove('hidden');
+          setTimeout(() => errorDiv.classList.add('hidden'), 5000);
+        } else {
+          errorDiv.classList.add('hidden');
+        }
+      }
+
+      async function loadSites() {
+        try {
+          const response = await fetch('api/get-sites.php');
+          const result = await response.json();
+          
+          if (result.success) {
+            // Load sites for form dropdown
+            const siteSelect = document.getElementById('siteSelect');
+            if (siteSelect) {
+              siteSelect.innerHTML = '<option value="">Select Site</option>';
+              result.data.forEach(site => {
+                const option = document.createElement('option');
+                option.value = site.site_Code;
+                option.textContent = `${site.site_Code} - ${site.Site_Name}`;
+                option.dataset.address = site.Address || '';
+                siteSelect.appendChild(option);
+              });
+            }
+            
+            // Load sites for Excel upload dropdown
+            const excelSiteSelect = document.getElementById('excelSiteSelect');
+            if (excelSiteSelect) {
+              excelSiteSelect.innerHTML = '<option value="">Select Site First</option>';
+              result.data.forEach(site => {
+                const option = document.createElement('option');
+                option.value = site.site_Code;
+                option.textContent = `${site.site_Code} - ${site.Site_Name}`;
+                option.dataset.address = site.Address || '';
+                excelSiteSelect.appendChild(option);
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error loading sites:', error);
+        }
+      }
+
+      document.addEventListener('change', function(e) {
+        if (e.target.id === 'siteSelect') {
+          const selectedOption = e.target.options[e.target.selectedIndex];
+          const siteAddress = document.getElementById('siteAddress');
+          siteAddress.value = selectedOption.dataset.address || '';
+        }
+        
+        if (e.target.id === 'excelSiteSelect') {
+          const dragDropArea = document.getElementById('dragDropArea');
+          const fileInput = document.getElementById('excelUpload');
+          
+          if (e.target.value) {
+            // Enable upload when site is selected
+            dragDropArea.classList.remove('disabled');
+            fileInput.disabled = false;
+            dragDropArea.querySelector('.text').textContent = 'Drag and drop your Excel file here';
+          } else {
+            // Disable upload when no site selected
+            dragDropArea.classList.add('disabled');
+            fileInput.disabled = true;
+            dragDropArea.querySelector('.text').textContent = 'Select a site first, then drag and drop your Excel file here';
+          }
+        }
       });
 
       function initializeEventListeners() {
@@ -307,6 +469,11 @@
 
       // File handling functions
       function triggerFileUpload() {
+        const excelSiteSelect = document.getElementById('excelSiteSelect');
+        if (!excelSiteSelect.value) {
+          showStatus('❌ Please select a site first before uploading Excel file', 'error');
+          return;
+        }
         fileInput.click();
       }
 
@@ -363,12 +530,21 @@
 
             updateProgress(70);
 
-            const extractedData = extractDeliveryNoteData(worksheet);
+            const extractedData = extractDeliveryNoteData(workbook);
+            
+            // Add selected site code to extracted data
+            const selectedSiteCode = document.getElementById('excelSiteSelect').value;
+            extractedData.deliveryNote.site_Code = selectedSiteCode;
+            
+            // Update items with selected site code
+            extractedData.items.forEach(item => {
+              item.site_code = selectedSiteCode;
+            });
 
             updateProgress(90);
 
             processedDeliveryNote = extractedData;
-            displayExcelData(extractedData);
+            displayExcelData(extractedData.deliveryNote, extractedData.items);
 
             updateProgress(100);
             showStatus(
@@ -413,10 +589,12 @@
         return true;
       }
 
-      function extractDeliveryNoteData(worksheet) {
+      function extractDeliveryNoteData(workbook) {
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
         const getCellValue = (cellRefs) => {
           const refs = Array.isArray(cellRefs) ? cellRefs : [cellRefs];
-
           for (const cellRef of refs) {
             const cell = worksheet[cellRef];
             if (cell && cell.v !== undefined && cell.v !== "") {
@@ -426,46 +604,95 @@
           return "";
         };
 
-        return {
-          print_date:
-            formatDateTime(getCellValue(["B2", "A2"])) || getCurrentDateTime(),
+        const deliveryNote = {
+          print_date: formatDateTime(getCellValue(["B2", "A2"])) || getCurrentDateTime(),
           purpose_of_delivery: getCellValue(["C3", "D3", "E3"]),
           delivery_address: getCellValue(["C4", "D4", "E4"]),
           site_Code: getCellValue(["C5", "D5", "E5"]),
           contract_info: getCellValue(["C6", "D6", "E6"]),
-          Customer: getCellValue(["G8", "H8", "I8"]),
-          Customer_PO: getCellValue(["N8", "O8"]),
+          Customer: getCellValue(["K8","08"]),
+          Customer_PO: getCellValue(["O8", "O8"]),
           Customer_Tel: getCellValue(["M4", "L4"]),
           Project_Name: getCellValue(["C7", "D7", "E7"]),
-          Project_Code: getCellValue(["N7", "O7"]),
+          Project_Code: getCellValue(["O7", "O7"]),
           Product_Category: getCellValue(["C8", "D8", "E8"]),
-          Product_Manager: getCellValue(["G9", "H9"]),
+          Product_Manager: getCellValue(["K9","09"]),
           Special_Unloading_Req: getCellValue(["C9", "D9", "E9"]),
           Installation_Environment: getCellValue(["C10", "D10", "E10"]),
           Description_MR: getCellValue(["C11", "D11", "E11"]),
           From_Warehouse: getCellValue(["C12", "D12", "E12"]),
           Warehouse_Keeper: getCellValue(["G12", "H12"]),
-          Warehouse_Keeper_tel: getCellValue(["N12", "O12"]),
+          Warehouse_Keeper_tel: getCellValue(["O12", "O12"]),
           Description_DN: getCellValue(["C13", "D13", "E13"]),
-          Including_dangerous_goods:
-            getCellValue(["C14", "D14", "E14"]) || "No",
-          pickup_address: getCellValue(["G3", "H3", "I3", "J3"]),
-          Site_Address: getCellValue(["G4", "H4", "I4", "J4"]),
+          Including_dangerous_goods: getCellValue(["C14", "D14", "E14"]) || "No",
+          pickup_address: getCellValue(["K3", "03"]),
+          Site_Address: getCellValue(["K4","04"]),
           dn_no: getCellValue(["O1", "N1", "P1"]) || generateDNNumber(),
           mr_no: getCellValue(["O2", "N2", "P2"]),
-          receiver_name: getCellValue(["M3", "L3"]),
-          receiver_tel: getCellValue(["M4", "L4"]),
+          receiver_name: getCellValue(["O3", "03"]),
+          receiver_tel: getCellValue(["O4", "04"]),
           Receiver_Company_Name: getCellValue(["M10", "N10", "O10"]),
-          request_arrived_date: formatDateTime(getCellValue(["G5", "H5"])),
-          request_shipment_date: formatDateTime(getCellValue(["N5", "O5"])),
-          logistics_specialist: getCellValue(["G6", "H6"]),
-          logistics_specialist_Tel: getCellValue(["H6", "I6"]),
+          request_arrived_date: formatDateTime(getCellValue(["K5", "05"])),
+          request_shipment_date: formatDateTime(getCellValue(["O5", "05"])),
+          logistics_specialist: getCellValue(["K6", "06"]),
+          logistics_specialist_Tel: getCellValue(["O6", "06"]),
           received_location: getCellValue(["G13", "H13"]),
           received_Auto_location: getCellValue(["G14", "H14"]),
           Collected_location: getCellValue(["G15", "H15"]),
-          Collected_Auto_location: getCellValue(["G16", "H16"]),
-          Company_code: getCellValue(["A1", "B1"]),
+         // Collected_Auto_location: getCellValue(["G16", "H16"]),
+          Company_code: '1000'
         };
+
+        // Extract items from second sheet only
+        const items = workbook.SheetNames.length > 1 ? 
+          extractItemsFromSheet(workbook.Sheets[workbook.SheetNames[1]], deliveryNote.dn_no, deliveryNote.site_Code) : [];
+        
+        return { deliveryNote, items };
+      }
+
+      function extractItemsFromSheet(worksheet, dnNo, siteCode) {
+        const items = [];
+        
+        const getCellValue = (cellRef) => {
+          const cell = worksheet[cellRef];
+          if (cell && cell.v !== undefined) {
+            return cell.w ? String(cell.w).trim() : String(cell.v).trim();
+          }
+          return "";
+        };
+        
+        // Extract items from rows 2-19 based on the sheet layout
+        for (let row = 2; row <= worksheet['!ref'].split(':')[1].replace(/[A-Z]/g, ''); row++) {
+          const itemCode = getCellValue(`E${row}`);
+          const qty = getCellValue(`F${row}`); 
+          const description = getCellValue(`G${row}`);
+          
+          // Skip header rows
+          if (itemCode && (itemCode.toLowerCase().includes('item') || itemCode.toLowerCase().includes('code'))) {
+            continue;
+          }
+          
+          if (itemCode || qty || description) {
+            items.push({
+              dn_no: dnNo,
+              site_code: siteCode, 
+              item_code: itemCode || '',
+              qty: parseFloat(qty) || 0,
+              item_description: description || '',
+              Company_code: '1000'
+            });
+          }
+        }
+        return items;
+      }
+
+      function getCellValueByRef(worksheet, cellRef) {
+        const cell = worksheet[cellRef];
+        if (cell && cell.v !== undefined) {
+          // Use formatted value (cell.w) if available, otherwise raw value (cell.v)
+          return cell.w ? String(cell.w).trim() : String(cell.v).trim();
+        }
+        return '';
       }
 
       // Utility functions
@@ -540,31 +767,23 @@
         }
       }
 
-      function displayExcelData(data) {
+      function displayExcelData(deliveryNote, items) {
+        let html = `
+          <div class="extraction-sections">
+            <div class="delivery-note-section">
+              <h4><ion-icon name="document-text-outline"></ion-icon> Delivery Note (Sheet 1)</h4>
+              <div class="data-grid">
+        `;
+
         const fieldLabels = {
-          print_date: "Print Date",
-          dn_no: "DN Number",
-          mr_no: "MR Number",
-          purpose_of_delivery: "Purpose of Delivery",
-          delivery_address: "Delivery Address",
-          site_code: "Site Code",
-          contract_info: "Contract Info",
-          project_name: "Project Name",
-          customer: "Customer",
-          receiver_name: "Receiver Name",
-          customer_tel: "Customer Tel",
-          from_warehouse: "From Warehouse",
-          pickup_address: "Pickup Address",
-          site_address: "Site Address",
+          print_date: "Print Date", dn_no: "DN Number", mr_no: "MR Number",
+          Customer: "Customer", Project_Name: "Project Name", site_Code: "Site Code",
+          From_Warehouse: "From Warehouse", Product_Manager: "Product Manager"
         };
 
-        let html = '<div class="data-grid">';
-
-        for (const [key, value] of Object.entries(data)) {
+        for (const [key, value] of Object.entries(deliveryNote)) {
           if (value && value.toString().trim() !== "") {
-            const label =
-              fieldLabels[key] ||
-              key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+            const label = fieldLabels[key] || key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
             html += `
               <div class="data-item">
                 <strong>${label}</strong>
@@ -574,7 +793,33 @@
           }
         }
 
-        html += "</div>";
+        html += '</div></div>';
+        
+        // Add items section
+        html += `
+          <div class="items-section">
+            <h4><ion-icon name="cube-outline"></ion-icon> Items (Sheet 2) - ${items.length} items</h4>
+        `;
+        
+        if (items && items.length > 0) {
+          html += '<div class="items-table-container"><table class="items-table"><thead><tr><th>Item Description</th><th>QTY</th><th>Item Code</th><th>Status</th></tr></thead><tbody>';
+          items.forEach((item, index) => {
+            html += `
+              <tr>
+                <td class="description-cell" title="${item.item_description || 'N/A'}">${item.item_description || 'N/A'}</td>
+                <td>${item.qty}</td>
+                <td><strong>${item.item_code}</strong></td>
+                <td><span class="status-badge status-created">Created</span></td>
+              </tr>
+            `;
+          });
+          html += '</tbody></table></div>';
+        } else {
+          html += '<div class="no-items">No items found in second sheet</div>';
+        }
+        
+        html += '</div></div>';
+        
         document.getElementById("excelDataContent").innerHTML = html;
         excelData.style.display = "block";
         clearBtn.style.display = "inline-flex";
@@ -598,16 +843,16 @@
           Customer: document.getElementById("customer").value,
           Project_Name: document.getElementById("projectName").value,
           Site_Address: document.getElementById("siteAddress").value,
-          site_Code: document.getElementById("siteCode").value || "",
+          site_Code: document.getElementById("siteSelect").value,
           Customer_PO: document.getElementById("customerPO").value || "",
           Customer_Tel: document.getElementById("customerTel").value || "",
-          Project_Code: document.getElementById("projectCode").value || "",
+          Project_Code: document.getElementById("projectCode").value ,
           Product_Category:
             document.getElementById("productCategory").value || "",
           Product_Manager:
-            document.getElementById("productManager").value || "",
-          receiver_name: document.getElementById("receiverName").value || "",
-          receiver_tel: document.getElementById("receiverTel").value || "",
+            document.getElementById("productManager").value,
+          receiver_name: document.getElementById("receiverName").value,
+          receiver_tel: document.getElementById("receiverTel").value,
           Receiver_Company_Name:
             document.getElementById("receiverCompany").value || "",
         };
@@ -622,10 +867,10 @@
           return;
         }
 
-        await uploadToDatabase(processedDeliveryNote);
+        await uploadToDatabase(processedDeliveryNote.deliveryNote, processedDeliveryNote.items);
       }
 
-      async function uploadToDatabase(data) {
+      async function uploadToDatabase(deliveryNote, items = []) {
         try {
           showStatus("🚀 Uploading to database...", "processing", true);
           updateProgress(20);
@@ -636,7 +881,7 @@
               "Content-Type": "application/json",
               Accept: "application/json",
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify({ deliveryNote, items }),
           });
 
           updateProgress(60);
@@ -651,24 +896,20 @@
           if (result.success) {
             updateProgress(100);
             showStatus(
-              `✅ Successfully uploaded! DN: ${result.dn_no || data.dn_no}`,
+              `✅ Successfully uploaded! DN: ${result.dn_no || deliveryNote.dn_no} with ${items.length} items`,
               "success"
             );
 
-            // Add to local storage for immediate display
-            const newNote = {
-              id: result.delivery_note_id || Date.now(),
-              ...data,
-              DN_Status: "Created",
-              created_at: getCurrentDateTime(),
-            };
-            allDeliveryNotes.unshift(newNote);
-            updateDeliveryNotesTable();
+            // Refresh delivery notes for current site
+            if (currentSiteCode === deliveryNote.site_Code) {
+              await fetchDeliveryNotes();
+            }
 
             // Reset forms
             clearExcelData();
-            toggleUploadForm();
-            document.getElementById("deliveryNoteForm").reset();
+            if (document.getElementById("deliveryNoteForm")) {
+              document.getElementById("deliveryNoteForm").reset();
+            }
           } else {
             throw new Error(result.error || "Upload failed");
           }
@@ -713,8 +954,8 @@
         if (notes.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="7" style="text-align: center; padding: 40px; color: #6c757d;">
-                <ion-icon name="document-outline" style="font-size: 2em; margin-bottom: 10px;"></ion-icon>
+              <td colspan="10" class="empty-state">
+                <ion-icon name="document-outline" class="empty-icon"></ion-icon>
                 <br>No delivery notes found
               </td>
             </tr>
@@ -726,18 +967,18 @@
           .map(
             (note) => `
           <tr>
-            <td><strong>${note.dn_no || "N/A"}</strong></td>
-            <td>${note.customer || "N/A"}</td>
-            <td>${note.project_name || "N/A"}</td>
-            <td title="${note.site_address || "N/A"}">${truncateText(
-              note.site_address || "N/A",
-              30
-            )}</td>
-            <td><span class="status-badge status-${(
+            <td class="col-dn"><strong>${note.dn_no || "N/A"}</strong></td>
+            <td class="col-mr">${note.mr_no || "N/A"}</td>
+            <td class="col-site">${note.site_Code || "N/A"}</td>
+            <td class="col-customer" title="${note.Customer || "N/A"}">${truncateText(note.Customer || "N/A", 20)}</td>
+            <td class="col-project" title="${note.Project_Name || "N/A"}">${truncateText(note.Project_Name || "N/A", 25)}</td>
+            <td class="col-manager" title="${note.Product_Manager || "N/A"}">${truncateText(note.Product_Manager || "N/A", 15)}</td>
+            <td class="col-warehouse" title="${note.From_Warehouse || "N/A"}">${truncateText(note.From_Warehouse || "N/A", 15)}</td>
+            <td class="col-date">${formatDisplayDate(note.request_arrived_date) || "N/A"}</td>
+            <td class="col-status"><span class="status-badge status-${(
               note.DN_Status || "created"
             ).toLowerCase()}">${note.DN_Status || "Created"}</span></td>
-            <td>${formatDisplayDate(note.created_at)}</td>
-            <td>
+            <td class="col-actions">
               <div class="action-buttons">
                 <button class="action-btn view" onclick="viewDeliveryNote(${
                   note.id
@@ -830,34 +1071,14 @@
 
       // Additional functions
       async function showSavedExcelSheets() {
-        try {
-          showStatus(
-            "📊 Loading delivery notes from database...",
-            "processing",
-            true
-          );
-
-          const response = await fetch("api/get-delivery-notes.php");
-          const result = await response.json();
-
-          if (result.success) {
-            allDeliveryNotes = result.data;
-            currentView = "all";
-            updateDeliveryNotesTable();
-            showStatus(
-              `✅ Loaded ${allDeliveryNotes.length} delivery notes from database`,
-              "success"
-            );
-          } else {
-            throw new Error(result.error || "Failed to load delivery notes");
-          }
-        } catch (error) {
-          console.error("Error loading delivery notes:", error);
-          showStatus(
-            "❌ Error loading delivery notes: " + error.message,
-            "error"
-          );
+        if (!currentSiteCode) {
+          showError('Please select a site first to view delivery notes');
+          return;
         }
+        
+        showingAll = true;
+        currentPage = 1;
+        await fetchDeliveryNotes();
       }
 
       function clearExcelData() {
@@ -893,7 +1114,7 @@
         const link = document.createElement("a");
         link.href = url;
         link.download = `delivery_note_${
-          processedDeliveryNote.dn_no || "data"
+          processedDeliveryNote.deliveryNote?.dn_no || "data"
         }.json`;
         document.body.appendChild(link);
         link.click();
@@ -907,46 +1128,27 @@
       function viewDeliveryNote(id) {
         const note = allDeliveryNotes.find((n) => n.id === id);
         if (note) {
-          // Create and show a modal or detailed view
-          alert(
-            `Delivery Note Details:\n\nDN: ${note.dn_no}\nCustomer: ${note.customer}\nProject: ${note.project_name}\nStatus: ${note.DN_Status}\nCreated: ${note.created_at}`
-          );
-        }
-      }
+          const details = `
+Delivery Note Details:
 
-      function editDeliveryNote(id) {
-        const note = allDeliveryNotes.find((n) => n.id === id);
-        if (note) {
-          // Populate the form with existing data
-          document.getElementById("dnNo").value = note.dn_no || "";
-          document.getElementById("mrNo").value = note.mr_no || "";
-          document.getElementById("customer").value = note.customer || "";
-          document.getElementById("projectName").value =
-            note.project_name || "";
-          document.getElementById("siteAddress").value =
-            note.site_address || "";
-          document.getElementById("contractInfo").value =
-            note.contract_info || "";
-          document.getElementById("fromWarehouse").value =
-            note.from_warehouse || "";
-          document.getElementById("receiverName").value =
-            note.receiver_name || "";
-          document.getElementById("customerTel").value =
-            note.customer_tel || "";
-          document.getElementById("purposeDelivery").value =
-            note.purpose_of_delivery || "";
-
-          toggleUploadForm();
-          showStatus(
-            "Editing delivery note. Modify fields and save.",
-            "success"
-          );
-        }
-      }
-
-      function deleteDeliveryNote(id) {
-        if (confirm("Are you sure you want to delete this delivery note?")) {
-          allDeliveryNotes = allDeliveryNotes.filter((n) => n.id !== id);
+DN Number: ${note.dn_no || 'N/A'}
+MR Number: ${note.mr_no || 'N/A'}
+Site Code: ${note.site_Code || 'N/A'}
+Customer: ${note.Customer || 'N/A'}
+Customer PO: ${note.Customer_PO || 'N/A'}
+Project Name: ${note.Project_Name || 'N/A'}
+Product Manager: ${note.Product_Manager || 'N/A'}
+From Warehouse: ${note.From_Warehouse || 'N/A'}
+Warehouse Keeper: ${note.Warehouse_Keeper || 'N/A'}
+Warehouse Tel: ${note.Warehouse_Keeper_tel || 'N/A'}
+Logistics Specialist: ${note.logistics_specialist || ''}
+Request Arrived Date: ${formatDisplayDate(note.request_arrived_date) || 'N/A'}
+Received Location: ${note.received_location || 'N/A'}
+Delivered Location: ${note.Delivered_location || 'N/A'}
+Collected Location: ${note.Collected_location || 'N/A'}
+Status: ${note.DN_Status || 'Created'}
+Contract Info: ${note.contract_info || 'N/A'}
+Created: ${formatDisplayDate(note.created_at) || 'N/A'}`;
           updateDeliveryNotesTable();
           showStatus("Delivery note deleted successfully", "success");
         }
