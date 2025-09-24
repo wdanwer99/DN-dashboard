@@ -29,6 +29,12 @@
             </a>
           </li>
           <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="add-trip.html">
+              <ion-icon name="car-sport-outline"></ion-icon>
+              <span class="links">Add Trip</span>
+            </a>
+          </li>
           <li class="navList active">
             <a href="add-site.html">
               <ion-icon name="location-outline"></ion-icon>
@@ -56,7 +62,7 @@
             </a>
           </li>
           <li>
-            <a href="index.html">
+            <a href="#" onclick="logout()">
               <ion-icon name="log-out-outline"></ion-icon>
               <span class="links">Logout</span>
             </a>
@@ -117,11 +123,10 @@
             ></textarea>
             <input type="text" name="Company_code" placeholder="Company Code" />
             <button type="submit">Add Site</button>
-            <button type="button" onclick="loadSites()">Show All Sites</button>
           </form>
         </div>
 
-        <div class="table-container" id="sitesTable">
+        <div class="table-container" id="sitesTable" style="display: block;">
           <div class="table-header">
             <ion-icon name="list-outline"></ion-icon>
             All Sites Database
@@ -147,6 +152,21 @@
 
     <script>
       let editingId = null;
+
+      // Check authentication
+      if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
+        window.location.href = 'index.html';
+      }
+      
+      function logout() {
+        sessionStorage.clear();
+        window.location.href = 'index.html';
+      }
+
+      // Auto-load sites on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        loadSites();
+      });
 
       document
         .getElementById("siteForm")

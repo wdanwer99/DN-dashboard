@@ -29,13 +29,19 @@
             </a>
           </li>
 
+          <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="add-trip.html">
+              <ion-icon name="car-sport-outline"></ion-icon>
+              <span class="links">Add Trip</span>
+            </a>
+          </li>
           <li class="navList">
             <a href="add-site.html">
               <ion-icon name="location-outline"></ion-icon>
               <span class="links">Add Site</span>
             </a>
           </li>
-          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-truck.html">
               <ion-icon name="car-outline"></ion-icon>
@@ -57,7 +63,7 @@
             </a>
           </li>
           <li>
-            <a href="index.html">
+            <a href="#" onclick="logout()">
               <ion-icon name="log-out-outline"></ion-icon>
               <span class="links">Logout</span>
             </a>
@@ -93,11 +99,10 @@
             </select>
             <input type="text" name="Company_code" placeholder="Company Code" />
             <button type="submit">Add Item</button>
-            <button type="button" onclick="loadItems()">Show All Items</button>
           </form>
         </div>
 
-        <div class="table-container" id="itemsTable">
+        <div class="table-container" id="itemsTable" style="display: block;">
           <div class="table-header">
             <ion-icon name="list-outline"></ion-icon>
             All Items Database
@@ -108,9 +113,9 @@
                 <tr>
                   <th>Item Code</th>
                   <th>Description</th>
-                  <th>Status</th>
                   <th>Company Code</th>
                   <th>Actions</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody id="itemsTableBody"></tbody>
@@ -122,6 +127,21 @@
 
     <script>
       let editingId = null;
+
+      // Check authentication
+      if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
+        window.location.href = 'index.html';
+      }
+      
+      function logout() {
+        sessionStorage.clear();
+        window.location.href = 'index.html';
+      }
+
+      // Auto-load items on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        loadItems();
+      });
 
       document
         .getElementById("itemForm")
@@ -199,13 +219,6 @@
               item.item_description || "N/A",
               50
             )}</td>
-              <td>
-                <span class="status-badge status-${
-                  item.item_Status === "Active" ? "active" : "inactive"
-                }">
-                  ${item.item_Status || "N/A"}
-                </span>
-              </td>
               <td>${item.Company_code || "N/A"}</td>
               <td>
                 <div class="action-buttons">
@@ -220,6 +233,13 @@
                     <ion-icon name="trash-outline"></ion-icon>
                   </button>
                 </div>
+              </td>
+              <td>
+                <span class="status-badge status-${
+                  item.item_Status === "Active" ? "active" : "inactive"
+                }">
+                  ${item.item_Status || "N/A"}
+                </span>
               </td>
             </tr>
           `

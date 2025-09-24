@@ -5,8 +5,9 @@ header('Access-Control-Allow-Origin: *');
 require_once '../config/database.php';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    if (!isset($pdo)) {
+        throw new Exception('Database connection failed');
+    }
 
     $siteCode = $_GET['site_code'] ?? '';
     $page = (int)($_GET['page'] ?? 1);
@@ -23,8 +24,8 @@ try {
     $totalCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
     // Get paginated results
-    $stmt = $pdo->prepare("SELECT * FROM Delivery_Notes WHERE site_Code = ? ORDER BY created_at DESC LIMIT ? OFFSET ?");
-    $stmt->execute([$siteCode, $limit, $offset]);
+    $stmt = $pdo->prepare("SELECT * FROM Delivery_Notes WHERE site_Code = ? ORDER BY created_at DESC LIMIT $offset, $limit");
+    $stmt->execute([$siteCode]);
     $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([

@@ -30,6 +30,12 @@
           </li>
           <li class="nav-divider"></li>
           <li class="navList">
+            <a href="add-trip.html">
+              <ion-icon name="car-sport-outline"></ion-icon>
+              <span class="links">Add Trip</span>
+            </a>
+          </li>
+          <li class="navList">
             <a href="add-site.html">
               <ion-icon name="location-outline"></ion-icon>
               <span class="links">Add Site</span>
@@ -56,7 +62,7 @@
             </a>
           </li>
           <li>
-            <a href="index.html">
+            <a href="#" onclick="logout()">
               <ion-icon name="log-out-outline"></ion-icon>
               <span class="links">Logout</span>
             </a>
@@ -84,10 +90,7 @@
                 <ion-icon name="add-outline"></ion-icon>
                 Add Delivery Note
               </button> -->
-              <button class="upload-btn" onclick="showSavedExcelSheets()">
-                <ion-icon name="list-outline"></ion-icon>
-                Show All Notes
-              </button>
+
               <button
                 class="upload-btn danger"
                 onclick="clearAllData()"
@@ -256,6 +259,44 @@
           <!-- Error Messages -->
           <div id="errorMessage" class="upload-status error hidden"></div>
 
+          <!-- Delivery Notes Table -->
+          <div class="table-container">
+            <div class="table-header">
+              <ion-icon name="list-outline"></ion-icon>
+              <span id="tableTitle">Select a site to view delivery notes</span>
+            </div>
+            <table class="delivery-notes-table">
+              <thead>
+                <tr>
+                  <th class="col-dn">DN No</th>
+                  <th class="col-mr">MR No</th>
+                  <th class="col-site">Site</th>
+                  <th class="col-customer">Customer</th>
+                  <th class="col-project">Project</th>
+                  <th class="col-manager">Manager</th>
+                  <th class="col-warehouse">Warehouse</th>
+                  <th class="col-date">Date</th>
+                  <th class="col-actions">Actions</th>
+                  <th class="col-status">Status</th>
+                </tr>
+              </thead>
+              <tbody id="deliveryNotesTableBody">
+                <tr>
+                  <td colspan="10" class="empty-state">
+                    <ion-icon name="location-outline" class="empty-icon"></ion-icon>
+                    <br>Select a site to view delivery notes
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            <div class="pagination" id="pagination" style="display: none;">
+              <button id="prevBtn" onclick="changePage(-1)">Previous</button>
+              <span id="pageInfo"></span>
+              <button id="nextBtn" onclick="changePage(1)">Next</button>
+            </div>
+          </div>
 
         </div>
       </div>
@@ -264,6 +305,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
+      // Check authentication
+      if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
+        window.location.href = 'index.html';
+      }
+      
+      function logout() {
+        sessionStorage.clear();
+        window.location.href = 'index.html';
+      }
+
       // Global variables
       let processedDeliveryNote = null;
       let allDeliveryNotes = [];
@@ -299,17 +350,20 @@
         
         currentSiteCode = siteCode;
         currentPage = 1;
-        showingAll = false;
+        showingAll = true;
         
         // Show loading state
-        document.getElementById('deliveryNotesTableBody').innerHTML = `
-          <tr>
-            <td colspan="10" class="empty-state">
-              <div class="loading-spinner"></div>
-              <br>Loading delivery notes for ${siteCode}...
-            </td>
-          </tr>
-        `;
+        const tableBody = document.getElementById('deliveryNotesTableBody');
+        if (tableBody) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="10" class="empty-state">
+                <div class="loading-spinner"></div>
+                <br>Loading all delivery notes for ${siteCode}...
+              </td>
+            </tr>
+          `;
+        }
         
         await fetchDeliveryNotes();
       }
@@ -317,9 +371,23 @@
       async function fetchDeliveryNotes() {
         try {
           showError('');
-          const limit = showingAll ? 1000 : 10;
-          const response = await fetch(`api/get-delivery-notes-by-site.php?site_code=${currentSiteCode}&page=${currentPage}&limit=${limit}`);
+          const limit = showingAll ? 100 : 10;
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          
+          const response = await fetch(`api/get-delivery-notes-by-site.php?site_code=${currentSiteCode}&page=${currentPage}&limit=${limit}`, {
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
           const result = await response.json();
+          console.log('API Response:', result);
           
           if (result.success) {
             allDeliveryNotes = result.data;
@@ -331,7 +399,19 @@
             throw new Error(result.error);
           }
         } catch (error) {
-          showError('Error loading delivery notes: ' + error.message);
+          if (error.name === 'AbortError') {
+            showError('Request timeout - please try again');
+          } else {
+            showError('Error loading delivery notes: ' + error.message);
+          }
+          document.getElementById('deliveryNotesTableBody').innerHTML = `
+            <tr>
+              <td colspan="10" class="empty-state">
+                <ion-icon name="warning-outline" class="empty-icon"></ion-icon>
+                <br>Failed to load delivery notes
+              </td>
+            </tr>
+          `;
         }
       }
 
@@ -975,9 +1055,6 @@
             <td class="col-manager" title="${note.Product_Manager || "N/A"}">${truncateText(note.Product_Manager || "N/A", 15)}</td>
             <td class="col-warehouse" title="${note.From_Warehouse || "N/A"}">${truncateText(note.From_Warehouse || "N/A", 15)}</td>
             <td class="col-date">${formatDisplayDate(note.request_arrived_date) || "N/A"}</td>
-            <td class="col-status"><span class="status-badge status-${(
-              note.DN_Status || "created"
-            ).toLowerCase()}">${note.DN_Status || "Created"}</span></td>
             <td class="col-actions">
               <div class="action-buttons">
                 <button class="action-btn view" onclick="viewDeliveryNote(${
@@ -997,6 +1074,9 @@
                 </button>
               </div>
             </td>
+            <td class="col-status"><span class="status-badge status-${(
+              note.DN_Status || "created"
+            ).toLowerCase()}">${note.DN_Status || "Created"}</span></td>
           </tr>
         `
           )
@@ -1065,7 +1145,11 @@
         searchInput.value = "";
         backBtn.style.display = "none";
         currentView = "all";
-        updateDeliveryNotesTable();
+        if (currentSiteCode) {
+          fetchDeliveryNotes();
+        } else {
+          resetTable();
+        }
         showStatus("Showing all delivery notes", "success");
       }
 
@@ -1128,29 +1212,18 @@
       function viewDeliveryNote(id) {
         const note = allDeliveryNotes.find((n) => n.id === id);
         if (note) {
-          const details = `
-Delivery Note Details:
-
-DN Number: ${note.dn_no || 'N/A'}
-MR Number: ${note.mr_no || 'N/A'}
-Site Code: ${note.site_Code || 'N/A'}
-Customer: ${note.Customer || 'N/A'}
-Customer PO: ${note.Customer_PO || 'N/A'}
-Project Name: ${note.Project_Name || 'N/A'}
-Product Manager: ${note.Product_Manager || 'N/A'}
-From Warehouse: ${note.From_Warehouse || 'N/A'}
-Warehouse Keeper: ${note.Warehouse_Keeper || 'N/A'}
-Warehouse Tel: ${note.Warehouse_Keeper_tel || 'N/A'}
-Logistics Specialist: ${note.logistics_specialist || ''}
-Request Arrived Date: ${formatDisplayDate(note.request_arrived_date) || 'N/A'}
-Received Location: ${note.received_location || 'N/A'}
-Delivered Location: ${note.Delivered_location || 'N/A'}
-Collected Location: ${note.Collected_location || 'N/A'}
-Status: ${note.DN_Status || 'Created'}
-Contract Info: ${note.contract_info || 'N/A'}
-Created: ${formatDisplayDate(note.created_at) || 'N/A'}`;
-          updateDeliveryNotesTable();
-          showStatus("Delivery note deleted successfully", "success");
+          const details = `DN: ${note.dn_no || 'N/A'}\nCustomer: ${note.Customer || 'N/A'}\nProject: ${note.Project_Name || 'N/A'}\nSite: ${note.site_Code || 'N/A'}\nStatus: ${note.DN_Status || 'Created'}`;
+          alert(details);
+        }
+      }
+      
+      function editDeliveryNote(id) {
+        alert('Edit functionality will be implemented');
+      }
+      
+      function deleteDeliveryNote(id) {
+        if (confirm('Are you sure you want to delete this delivery note?')) {
+          alert('Delete functionality will be implemented');
         }
       }
     </script>

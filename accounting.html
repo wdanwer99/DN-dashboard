@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Accounting Dashboard</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <div class="logo-image">
+                <img src="" alt="">
+            </div>
+        </div>
+        <div class="menu-items">
+            <ul class="navLinks">
+                <li class="navList active">
+                    <a href="accounting.html">
+                        <ion-icon name="calculator-outline"></ion-icon>
+                        <span class="links">Accounting</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="delivery-notes.html">
+                        <ion-icon name="folder-outline"></ion-icon>
+                        <span class="links">View Delivery Notes</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="bottom-link">
+                <li>
+                    <a href="profile.html">
+                        <ion-icon name="person-circle-outline"></ion-icon>
+                        <span class="links">Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="logout()">
+                        <ion-icon name="log-out-outline"></ion-icon>
+                        <span class="links">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="container">
+            <div class="title">
+                <ion-icon name="calculator-outline"></ion-icon>
+                <span class="text">Trip Accounting Management</span>
+            </div>
+
+            <div class="upload-form">
+                <form id="accountForm" class="form-grid">
+                    <select id="assignmentSelect" required>
+                        <option value="">Select Trip Assignment</option>
+                    </select>
+                    
+                    <input type="number" id="cost" placeholder="Total Cost" step="0.01" required>
+                    
+                    <input type="number" id="advancePayment" placeholder="Advance Payment" step="0.01" required>
+                    
+                    <input type="number" id="goveFees" placeholder="Government Fees" step="0.01" required>
+                    
+                    <select id="paymentStatus" required>
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+                    
+                    <input type="date" id="paymentDate" placeholder="Payment Date">
+                    
+                    <textarea id="remarks" placeholder="Remarks (fuel, tolls, etc.)" rows="2"></textarea>
+                    
+                    <button type="submit">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Add Account Record
+                    </button>
+                </form>
+            </div>
+
+            <div id="message" class="upload-status hidden"></div>
+            
+            <!-- Accounts Table -->
+            <div class="table-container" style="display: block;">
+                <div class="table-header">
+                    <ion-icon name="list-outline"></ion-icon>
+                    All Account Records
+                </div>
+                <table class="delivery-notes-table">
+                    <thead>
+                        <tr>
+                            <th>Assignment ID</th>
+                            <th>Site</th>
+                            <th>DN No</th>
+                            <th>Truck</th>
+                            <th>Cost</th>
+                            <th>Advance</th>
+                            <th>Gov Fees</th>
+                            <th>Balance</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTableBody">
+                        <tr>
+                            <td colspan="10" class="empty-state">
+                                <div class="loading-spinner"></div>
+                                <br>Loading accounts...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'accounting') {
+            window.location.href = 'index.html';
+        }
+        
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAssignments();
+            loadAccounts();
+            
+            document.getElementById('accountForm').addEventListener('submit', handleSubmit);
+        });
+
+        async function loadAssignments() {
+            try {
+                const response = await fetch('api/get-trips.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('assignmentSelect');
+                    result.data.forEach(trip => {
+                        const option = document.createElement('option');
+                        option.value = trip.assignment_id;
+                        option.textContent = `${trip.assignment_id} - ${trip.site_Code} (${trip.dn_no})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                showMessage('Error loading assignments', 'error');
+            }
+        }
+
+        async function loadAccounts() {
+            try {
+                const response = await fetch('api/get-accounts.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayAccounts(result.data);
+                } else {
+                    showMessage('Error loading accounts', 'error');
+                }
+            } catch (error) {
+                showMessage('Error loading accounts', 'error');
+            }
+        }
+
+        function displayAccounts(accounts) {
+            const tbody = document.getElementById('accountsTableBody');
+            
+            if (accounts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <ion-icon name="calculator-outline" class="empty-icon"></ion-icon>
+                            <br>No account records found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = accounts.map(account => `
+                <tr>
+                    <td><strong>${account.assignment_id}</strong></td>
+                    <td>${account.site_Code || 'N/A'}</td>
+                    <td>${account.dn_no || 'N/A'}</td>
+                    <td>${account.truck_no || 'N/A'}</td>
+                    <td>$${parseFloat(account.cost).toFixed(2)}</td>
+                    <td>$${parseFloat(account.advance_payment).toFixed(2)}</td>
+                    <td>$${parseFloat(account.Gove_Fees).toFixed(2)}</td>
+                    <td>$${parseFloat(account.balance).toFixed(2)}</td>
+                    <td>${new Date(account.created_at).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${account.payment_status.toLowerCase()}">${account.payment_status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                assignment_id: document.getElementById('assignmentSelect').value,
+                cost: document.getElementById('cost').value,
+                advance_payment: document.getElementById('advancePayment').value,
+                Gove_Fees: document.getElementById('goveFees').value,
+                payment_status: document.getElementById('paymentStatus').value,
+                payment_date: document.getElementById('paymentDate').value,
+                remarks: document.getElementById('remarks').value,
+                Company_code: '1000'
+            };
+            
+            try {
+                const response = await fetch('api/add-account.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Account record added successfully!', 'success');
+                    document.getElementById('accountForm').reset();
+                    loadAccounts();
+                } else {
+                    showMessage('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error adding account record', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `upload-status ${type}`;
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => messageDiv.classList.add('hidden'), 3000);
+        }
+    </script>
+    
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

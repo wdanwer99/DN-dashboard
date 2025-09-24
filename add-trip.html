@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Add Trip - Admin</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <div class="logo-image">
+                <img src="" alt="">
+            </div>
+        </div>
+        <div class="menu-items">
+            <ul class="navLinks">
+                <li class="navList">
+                    <a href="dashboard.html">
+                        <ion-icon name="home-outline"></ion-icon>
+                        <span class="links">Dashboard</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="delivery-notes.html">
+                        <ion-icon name="folder-outline"></ion-icon>
+                        <span class="links">Delivery notes</span>
+                    </a>
+                </li>
+                <li class="nav-divider"></li>
+                <li class="navList active">
+                    <a href="add-trip.html">
+                        <ion-icon name="car-sport-outline"></ion-icon>
+                        <span class="links">Add Trip</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="add-site.html">
+                        <ion-icon name="location-outline"></ion-icon>
+                        <span class="links">Add Site</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="add-truck.html">
+                        <ion-icon name="car-outline"></ion-icon>
+                        <span class="links">Add Truck</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="add_item.html">
+                        <ion-icon name="cube-outline"></ion-icon>
+                        <span class="links">Add Item</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="bottom-link">
+                <li>
+                    <a href="profile.html">
+                        <ion-icon name="person-circle-outline"></ion-icon>
+                        <span class="links">Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="logout()">
+                        <ion-icon name="log-out-outline"></ion-icon>
+                        <span class="links">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="container">
+            <div class="title">
+                <ion-icon name="car-sport-outline"></ion-icon>
+                <span class="text">Add Trip Assignment</span>
+            </div>
+
+            <div class="upload-form">
+                <form id="tripForm" class="form-grid">
+                    <input type="number" id="assignmentId" placeholder="Assignment ID" required>
+                    
+                    <select id="siteSelect" required>
+                        <option value="">Select Site</option>
+                    </select>
+                    
+                    <select id="dnSelect" required disabled>
+                        <option value="">Select Delivery Note</option>
+                    </select>
+                    
+                    <select id="truckSelect" required>
+                        <option value="">Select Truck</option>
+                    </select>
+                    
+                    <select id="statusSelect" required>
+                        <option value="Assigned">Assigned</option>
+                        <option value="In Transit">In Transit</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    
+                    <button type="submit">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Add Trip
+                    </button>
+                </form>
+            </div>
+
+            <div id="message" class="upload-status hidden"></div>
+            
+            <!-- Trips Table -->
+            <div class="table-container" style="display: block;">
+                <div class="table-header">
+                    <ion-icon name="list-outline"></ion-icon>
+                    All Trip Assignments
+                </div>
+                <table class="delivery-notes-table">
+                    <thead>
+                        <tr>
+                            <th>Assignment ID</th>
+                            <th>Site</th>
+                            <th>DN No</th>
+                            <th>Truck</th>
+                            <th>Driver</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tripsTableBody">
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <div class="loading-spinner"></div>
+                                <br>Loading trips...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
+            window.location.href = 'index.html';
+        }
+        
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSites();
+            loadTrucks();
+            loadTrips();
+            
+            document.getElementById('siteSelect').addEventListener('change', loadDeliveryNotes);
+            document.getElementById('tripForm').addEventListener('submit', handleSubmit);
+        });
+
+        async function loadSites() {
+            try {
+                const response = await fetch('api/get-sites.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('siteSelect');
+                    result.data.forEach(site => {
+                        const option = document.createElement('option');
+                        option.value = site.site_Code;
+                        option.textContent = `${site.site_Code} - ${site.Site_Name}`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                showMessage('Error loading sites', 'error');
+            }
+        }
+
+        async function loadDeliveryNotes() {
+            const siteCode = document.getElementById('siteSelect').value;
+            const dnSelect = document.getElementById('dnSelect');
+            
+            dnSelect.innerHTML = '<option value="">Select Delivery Note</option>';
+            
+            if (!siteCode) {
+                dnSelect.disabled = true;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`api/get-delivery-notes-by-site.php?site_code=${siteCode}&limit=100`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    dnSelect.disabled = false;
+                    result.data.forEach(note => {
+                        const option = document.createElement('option');
+                        option.value = note.dn_no;
+                        option.textContent = `${note.dn_no} - ${note.Customer || 'N/A'}`;
+                        dnSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                showMessage('Error loading delivery notes', 'error');
+            }
+        }
+
+        async function loadTrucks() {
+            try {
+                const response = await fetch('api/get-trucks.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('truckSelect');
+                    result.data.forEach(truck => {
+                        const option = document.createElement('option');
+                        option.value = truck.truck_id;
+                        option.textContent = `${truck.truck_no} - ${truck.driver_name}`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                showMessage('Error loading trucks', 'error');
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                assignment_id: document.getElementById('assignmentId').value,
+                site_Code: document.getElementById('siteSelect').value,
+                dn_no: document.getElementById('dnSelect').value,
+                truck_id: document.getElementById('truckSelect').value,
+                status: document.getElementById('statusSelect').value,
+                Company_code: '1000'
+            };
+            
+            try {
+                const response = await fetch('api/add-trip.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Trip added successfully!', 'success');
+                    document.getElementById('tripForm').reset();
+                    document.getElementById('dnSelect').disabled = true;
+                    loadTrips();
+                } else {
+                    showMessage('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error adding trip', 'error');
+            }
+        }
+
+        async function loadTrips() {
+            try {
+                const response = await fetch('api/get-trips.php');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayTrips(result.data);
+                } else {
+                    showMessage('Error loading trips', 'error');
+                }
+            } catch (error) {
+                showMessage('Error loading trips', 'error');
+            }
+        }
+
+        function displayTrips(trips) {
+            const tbody = document.getElementById('tripsTableBody');
+            
+            if (trips.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <ion-icon name="car-sport-outline" class="empty-icon"></ion-icon>
+                            <br>No trips found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = trips.map(trip => `
+                <tr>
+                    <td><strong>${trip.assignment_id}</strong></td>
+                    <td>${trip.site_Code} - ${trip.Site_Name || 'N/A'}</td>
+                    <td>${trip.dn_no}</td>
+                    <td>${trip.truck_no || 'N/A'}</td>
+                    <td>${trip.driver_name || 'N/A'}</td>
+                    <td>${new Date(trip.assigned_date).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${trip.status.toLowerCase().replace(' ', '-')}">${trip.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `upload-status ${type}`;
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => messageDiv.classList.add('hidden'), 3000);
+        }
+    </script>
+    
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

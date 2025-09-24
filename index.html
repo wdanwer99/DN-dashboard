@@ -2,24 +2,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <title>Admin Dashboard - Login</title>
+    <title>Login - Admin Dashboard</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="login-box">
+        <div class="login-header">
             <h2>Admin Dashboard</h2>
-            <p>Welcome to the Admin Panel</p>
-            <button class="login-btn" onclick="window.location.href='dashboard.html'">
-                <ion-icon name="log-in-outline"></ion-icon>
-                Enter Dashboard
-            </button>
+            <p>Please login to continue</p>
         </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" required>
+                    <option value="">Select Role</option>
+                    <option value="admin">Dashboard Admin</option>
+                    <option value="accounting">Accounting Person</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="login-btn">Login</button>
+            <div class="error-message" id="errorMessage"></div>
+        </form>
     </div>
-    
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if ((username === 'admin' && password === 'admin123' && role === 'admin') ||
+                (username === 'accounting' && password === 'acc123' && role === 'accounting')) {
+                
+                sessionStorage.setItem('userRole', role);
+                sessionStorage.setItem('username', username);
+                
+                if (role === 'admin') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    window.location.href = 'accounting.html';
+                }
+            } else {
+                errorMessage.textContent = 'Invalid credentials';
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
