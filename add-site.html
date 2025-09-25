@@ -28,13 +28,19 @@
               <span class="links">Delivery notes</span>
             </a>
           </li>
-          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-trip.html">
               <ion-icon name="car-sport-outline"></ion-icon>
               <span class="links">Add Trip</span>
             </a>
           </li>
+          <li class="navList">
+            <a href="accounting.html">
+              <ion-icon name="calculator-outline"></ion-icon>
+              <span class="links">Accounting</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
           <li class="navList active">
             <a href="add-site.html">
               <ion-icon name="location-outline"></ion-icon>
@@ -97,16 +103,16 @@
               placeholder="Operator/Tenant"
               required
             />
-            <input type="text" name="Address" placeholder="Full Address" />
+            <textarea name="Address" placeholder="Full Address" rows="2"></textarea>
             <input
               type="number"
-              name="GPS_Latitude"
+              name="Location link"
               placeholder="GPS Latitude"
               step="0.000001"
             />
             <input
               type="number"
-              name="GPS_Longitude"
+              name="Location link data"
               placeholder="GPS Longitude"
               step="0.000001"
             />
@@ -121,7 +127,7 @@
               name="Access_Instructions"
               placeholder="Access Instructions"
             ></textarea>
-            <input type="text" name="Company_code" placeholder="Company Code" />
+            <input type="hidden" name="Company_code" value="1000" />
             <button type="submit">Add Site</button>
           </form>
         </div>
@@ -130,6 +136,9 @@
           <div class="table-header">
             <ion-icon name="list-outline"></ion-icon>
             All Sites Database
+          </div>
+          <div class="search-container" style="padding: 15px; border-bottom: 1px solid #dee2e6;">
+            <input type="text" id="siteSearch" placeholder="Search sites by code, name, or operator..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div class="table-scroll">
             <table class="delivery-notes-table">
@@ -140,6 +149,7 @@
                   <th>Operator</th>
                   <th>Type</th>
                   <th>Address</th>
+                  <th>Location</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -157,15 +167,13 @@
       if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
         window.location.href = 'index.html';
       }
-      
-      function logout() {
-        sessionStorage.clear();
-        window.location.href = 'index.html';
-      }
+
+      let allSites = [];
 
       // Auto-load sites on page load
       document.addEventListener('DOMContentLoaded', function() {
         loadSites();
+        document.getElementById('siteSearch').addEventListener('input', filterSites);
       });
 
       document
@@ -210,7 +218,8 @@
           const result = await response.json();
 
           if (result.success) {
-            displaySites(result.data);
+            allSites = result.data;
+            displaySites(allSites);
             document.getElementById("sitesTable").classList.remove("hidden");
           } else {
             alert("Error loading sites: " + result.error);
@@ -226,7 +235,7 @@
         if (sites.length === 0) {
           tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="7" class="empty-state">
                             <ion-icon name="location-outline" class="empty-icon"></ion-icon>
                             <br>No sites found
                         </td>
@@ -253,6 +262,7 @@
               site.Address || "N/A",
               30
             )}</td>
+                    <td>${site.GPS_Latitude && site.GPS_Longitude ? `${site.GPS_Latitude}, ${site.GPS_Longitude}` : 'N/A'}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn edit" onclick="editSite(${
@@ -332,6 +342,24 @@
         }
       }
 
+      function filterSites() {
+        const searchTerm = document.getElementById('siteSearch').value.toLowerCase();
+        
+        if (!searchTerm) {
+          displaySites(allSites);
+          return;
+        }
+        
+        const filteredSites = allSites.filter(site => 
+          (site.site_Code && site.site_Code.toLowerCase().includes(searchTerm)) ||
+          (site.Site_Name && site.Site_Name.toLowerCase().includes(searchTerm)) ||
+          (site.Tel_Operator && site.Tel_Operator.toLowerCase().includes(searchTerm)) ||
+          (site.Address && site.Address.toLowerCase().includes(searchTerm))
+        );
+        
+        displaySites(filteredSites);
+      }
+
       function truncateText(text, maxLength) {
         return text.length > maxLength
           ? text.substring(0, maxLength) + "..."
@@ -339,6 +367,7 @@
       }
     </script>
 
+    <script src="js/session.js"></script>
     <script
       type="module"
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"

@@ -28,13 +28,19 @@
               <span class="links">Delivery notes</span>
             </a>
           </li>
-          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-trip.html">
               <ion-icon name="car-sport-outline"></ion-icon>
               <span class="links">Add Trip</span>
             </a>
           </li>
+          <li class="navList">
+            <a href="accounting.html">
+              <ion-icon name="calculator-outline"></ion-icon>
+              <span class="links">Accounting</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-site.html">
               <ion-icon name="location-outline"></ion-icon>
@@ -105,7 +111,7 @@
               <option value="Maintenance">Maintenance</option>
               <option value="Unavailable">Unavailable</option>
             </select>
-            <input type="text" name="Company_code" placeholder="Company Code" />
+            <input type="hidden" name="Company_code" value="1000" />
             <button type="submit">Add Truck</button>
           </form>
         </div>
@@ -123,7 +129,6 @@
                   <th>Driver Name</th>
                   <th>Driver Phone</th>
                   <th>Capacity</th>
-                  <th>Company</th>
                   <th>Actions</th>
                   <th>Status</th>
                 </tr>
@@ -140,11 +145,6 @@
 
       // Check authentication
       if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
-        window.location.href = 'index.html';
-      }
-      
-      function logout() {
-        sessionStorage.clear();
         window.location.href = 'index.html';
       }
 
@@ -213,7 +213,7 @@
         if (trucks.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="7" class="empty-state">
+              <td colspan="6" class="empty-state">
                 <ion-icon name="car-outline" class="empty-icon"></ion-icon>
                 <br>No trucks found
               </td>
@@ -230,7 +230,6 @@
               <td>${truck.driver_name || "N/A"}</td>
               <td>${truck.driver_phone || "N/A"}</td>
               <td>${truck.capacity ? truck.capacity + " t/m³" : "N/A"}</td>
-              <td>${truck.Company_code || "N/A"}</td>
               <td>
                 <div class="action-buttons">
                   <button class="action-btn edit" onclick="editTruck(${
@@ -322,6 +321,7 @@
       }
     </script>
 
+    <script src="js/session.js"></script>
     <script
       type="module"
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"

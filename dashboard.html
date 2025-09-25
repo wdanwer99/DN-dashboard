@@ -28,13 +28,19 @@
               <span class="links">Delivery notes</span>
             </a>
           </li>
-          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-trip.html">
               <ion-icon name="car-sport-outline"></ion-icon>
               <span class="links">Add Trip</span>
             </a>
           </li>
+          <li class="navList">
+            <a href="accounting.html">
+              <ion-icon name="calculator-outline"></ion-icon>
+              <span class="links">Accounting</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-site.html">
               <ion-icon name="location-outline"></ion-icon>
@@ -102,25 +108,21 @@
                 </div> 
             </div>
             
-            <div class="data-table activityTable">
+            <!-- <div class="data-table activityTable">
                 <div class="title">
                     <ion-icon name="time-outline"></ion-icon>
                     <span class="text">Recent Activities</span>
                 </div>
                 <div>
-                    <!-- Enter any table or section here -->
+                     Enter any table or section here
                 </div>
-            </div>
+            </div>  -->
         </div>
     </section>
 
+    <script src="js/session.js"></script>
     <script>
         if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
-            window.location.href = 'index.html';
-        }
-        
-        function logout() {
-            sessionStorage.clear();
             window.location.href = 'index.html';
         }
     </script>

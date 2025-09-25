@@ -28,14 +28,19 @@
               <span class="links">Delivery notes</span>
             </a>
           </li>
-
-          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-trip.html">
               <ion-icon name="car-sport-outline"></ion-icon>
               <span class="links">Add Trip</span>
             </a>
           </li>
+          <li class="navList">
+            <a href="accounting.html">
+              <ion-icon name="calculator-outline"></ion-icon>
+              <span class="links">Accounting</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-site.html">
               <ion-icon name="location-outline"></ion-icon>
@@ -97,7 +102,7 @@
               <option value="Active" selected>Active</option>
               <option value="Not Active">Not Active</option>
             </select>
-            <input type="text" name="Company_code" placeholder="Company Code" />
+            <input type="hidden" name="Company_code" value="1000" />
             <button type="submit">Add Item</button>
           </form>
         </div>
@@ -113,7 +118,6 @@
                 <tr>
                   <th>Item Code</th>
                   <th>Description</th>
-                  <th>Company Code</th>
                   <th>Actions</th>
                   <th>Status</th>
                 </tr>
@@ -130,11 +134,6 @@
 
       // Check authentication
       if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
-        window.location.href = 'index.html';
-      }
-      
-      function logout() {
-        sessionStorage.clear();
         window.location.href = 'index.html';
       }
 
@@ -201,7 +200,7 @@
         if (items.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="5" class="empty-state">
+              <td colspan="4" class="empty-state">
                 <ion-icon name="cube-outline" class="empty-icon"></ion-icon>
                 <br>No items found
               </td>
@@ -219,7 +218,6 @@
               item.item_description || "N/A",
               50
             )}</td>
-              <td>${item.Company_code || "N/A"}</td>
               <td>
                 <div class="action-buttons">
                   <button class="action-btn edit" onclick="editItem(${
@@ -303,6 +301,7 @@
       }
     </script>
 
+    <script src="js/session.js"></script>
     <script
       type="module"
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"

@@ -987,6 +987,127 @@ nav .menu-items li.active {
   display: none;
 }
 
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  nav {
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding: 10px;
+  }
+  
+  nav .menu-items {
+    flex-direction: row;
+    height: auto;
+    overflow-x: auto;
+  }
+  
+  nav .navLinks {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
+  
+  nav .navLinks li {
+    min-width: 80px;
+  }
+  
+  nav .navLinks li a {
+    flex-direction: column;
+    padding: 8px;
+    font-size: 12px;
+  }
+  
+  nav .navLinks li a .links {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+  
+  nav .bottom-link {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .dashboard {
+    left: 0;
+    width: 100%;
+    padding: 10px;
+  }
+  
+  .container {
+    padding: 0;
+  }
+  
+  .boxes {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .box {
+    width: 100% !important;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .upload-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .search-container {
+    flex-direction: column;
+    min-width: auto;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .delivery-notes-table {
+    min-width: 800px;
+  }
+  
+  .upload-form {
+    padding: 15px;
+  }
+  
+  .data-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .login-container {
+    margin: 20px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  nav .navLinks li a {
+    padding: 6px;
+  }
+  
+  nav .navLinks li a ion-icon {
+    font-size: 18px;
+  }
+  
+  .title .text {
+    font-size: 18px;
+  }
+  
+  .upload-btn {
+    padding: 10px 15px;
+    font-size: 12px;
+  }
+  
+  .form-grid input,
+  .form-grid select,
+  .form-grid textarea {
+    font-size: 16px;
+  }
+}
+
 /* Items display styles */
 
 

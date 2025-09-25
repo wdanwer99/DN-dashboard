@@ -27,13 +27,19 @@
                         <span class="links">Delivery notes</span>
                     </a>
                 </li>
-                <li class="nav-divider"></li>
                 <li class="navList active">
                     <a href="add-trip.html">
                         <ion-icon name="car-sport-outline"></ion-icon>
                         <span class="links">Add Trip</span>
                     </a>
                 </li>
+                <li class="navList">
+                    <a href="accounting.html">
+                        <ion-icon name="calculator-outline"></ion-icon>
+                        <span class="links">Accounting</span>
+                    </a>
+                </li>
+                <li class="nav-divider"></li>
                 <li class="navList">
                     <a href="add-site.html">
                         <ion-icon name="location-outline"></ion-icon>
@@ -79,15 +85,26 @@
 
             <div class="upload-form">
                 <form id="tripForm" class="form-grid">
-                    <input type="number" id="assignmentId" placeholder="Assignment ID" required>
-                    
                     <select id="siteSelect" required>
                         <option value="">Select Site</option>
                     </select>
                     
-                    <select id="dnSelect" required disabled>
-                        <option value="">Select Delivery Note</option>
-                    </select>
+                    <div id="dnSelectContainer">
+                        <input type="hidden" id="selectedDN" required>
+                        <button type="button" id="dnSelectBtn" disabled style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; background: white; text-align: left; min-height: 50px; display: flex; align-items: center;">Select Delivery Note</button>
+                        <div id="dnTable" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 300px; overflow-y: auto; width: 100%; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                                <thead>
+                                    <tr style="background: #f8f9fa;">
+                                        <th style="padding: 8px; border-bottom: 1px solid #ddd; font-size: 12px; width: 25%;">DN No</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid #ddd; font-size: 12px; width: 40%;">Customer</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid #ddd; font-size: 12px; width: 35%;">Project</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dnTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
                     
                     <select id="truckSelect" required>
                         <option value="">Select Truck</option>
@@ -144,11 +161,6 @@
         if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
             window.location.href = 'index.html';
         }
-        
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = 'index.html';
-        }
 
         document.addEventListener('DOMContentLoaded', function() {
             loadSites();
@@ -157,6 +169,19 @@
             
             document.getElementById('siteSelect').addEventListener('change', loadDeliveryNotes);
             document.getElementById('tripForm').addEventListener('submit', handleSubmit);
+            
+            // Toggle delivery notes table
+            document.getElementById('dnSelectBtn').addEventListener('click', function() {
+                const table = document.getElementById('dnTable');
+                table.style.display = table.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Close table when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!document.getElementById('dnSelectContainer').contains(e.target)) {
+                    document.getElementById('dnTable').style.display = 'none';
+                }
+            });
         });
 
         async function loadSites() {
@@ -180,12 +205,15 @@
 
         async function loadDeliveryNotes() {
             const siteCode = document.getElementById('siteSelect').value;
-            const dnSelect = document.getElementById('dnSelect');
+            const dnBtn = document.getElementById('dnSelectBtn');
+            const dnTableBody = document.getElementById('dnTableBody');
             
-            dnSelect.innerHTML = '<option value="">Select Delivery Note</option>';
+            dnTableBody.innerHTML = '';
+            document.getElementById('selectedDN').value = '';
+            dnBtn.textContent = 'Select Delivery Note';
             
             if (!siteCode) {
-                dnSelect.disabled = true;
+                dnBtn.disabled = true;
                 return;
             }
             
@@ -194,17 +222,33 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    dnSelect.disabled = false;
+                    dnBtn.disabled = false;
                     result.data.forEach(note => {
-                        const option = document.createElement('option');
-                        option.value = note.dn_no;
-                        option.textContent = `${note.dn_no} - ${note.Customer || 'N/A'}`;
-                        dnSelect.appendChild(option);
+                        const row = document.createElement('tr');
+                        row.style.cursor = 'pointer';
+                        row.innerHTML = `
+                            <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${note.dn_no}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${note.Customer || 'N/A'}">${note.Customer || 'N/A'}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${note.Project_Name || 'N/A'}">${note.Project_Name || 'N/A'}</td>
+                        `;
+                        row.onclick = () => selectDeliveryNote(note.dn_no, note.Customer || 'N/A', note.Project_Name || 'N/A');
+                        dnTableBody.appendChild(row);
                     });
                 }
             } catch (error) {
                 showMessage('Error loading delivery notes', 'error');
             }
+        }
+        
+        function selectDeliveryNote(dnNo, customer, project) {
+            document.getElementById('selectedDN').value = dnNo;
+            document.getElementById('dnSelectBtn').innerHTML = `
+                <div style="text-align: left;">
+                    <strong>${dnNo}</strong><br>
+                    <small style="color: #666;">${customer} - ${project}</small>
+                </div>
+            `;
+            document.getElementById('dnTable').style.display = 'none';
         }
 
         async function loadTrucks() {
@@ -230,9 +274,9 @@
             e.preventDefault();
             
             const formData = {
-                assignment_id: document.getElementById('assignmentId').value,
+                assignment_id: Date.now(),
                 site_Code: document.getElementById('siteSelect').value,
-                dn_no: document.getElementById('dnSelect').value,
+                dn_no: document.getElementById('selectedDN').value,
                 truck_id: document.getElementById('truckSelect').value,
                 status: document.getElementById('statusSelect').value,
                 Company_code: '1000'
@@ -250,7 +294,9 @@
                 if (result.success) {
                     showMessage('Trip added successfully!', 'success');
                     document.getElementById('tripForm').reset();
-                    document.getElementById('dnSelect').disabled = true;
+                    document.getElementById('dnSelectBtn').disabled = true;
+                    document.getElementById('selectedDN').value = '';
+                    document.getElementById('dnSelectBtn').textContent = 'Select Delivery Note';
                     loadTrips();
                 } else {
                     showMessage('Error: ' + result.error, 'error');
@@ -312,6 +358,7 @@
         }
     </script>
     
+    <script src="js/session.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>
