@@ -1,22 +1,28 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config/database.php';
 
-try {
-    if (!isset($pdo)) {
-        throw new Exception('Database connection failed');
-    }
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        if (!isset($pdo)) {
+            throw new Exception('Database connection failed');
+        }
 
-    $siteCode = $_GET['site_code'] ?? '';
-    $page = (int)($_GET['page'] ?? 1);
-    $limit = (int)($_GET['limit'] ?? 10);
-    $offset = ($page - 1) * $limit;
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        
+        $siteCode = $data['site_code'] ?? '';
+        $page = (int)($data['page'] ?? 1);
+        $limit = (int)($data['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
 
-    if (empty($siteCode)) {
-        throw new Exception('Site code is required');
-    }
+        if (empty($siteCode)) {
+            throw new Exception('Site code is required');
+        }
 
     // Get total count
     $countStmt = $pdo->prepare("SELECT COUNT(*) as total FROM Delivery_Notes WHERE site_Code = ?");
@@ -37,7 +43,10 @@ try {
         'totalPages' => ceil($totalCount / $limit)
     ]);
 
-} catch(Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    } catch(Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+} else {
+    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
 }
 ?>

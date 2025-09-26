@@ -117,7 +117,7 @@
                         <option value="Cancelled">Cancelled</option>
                     </select>
                     
-                    <button type="submit">
+                    <button type="submit" id="addTripBtn">
                         <ion-icon name="add-outline"></ion-icon>
                         Add Trip
                     </button>
@@ -163,12 +163,37 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
             loadSites();
             loadTrucks();
             loadTrips();
             
-            document.getElementById('siteSelect').addEventListener('change', loadDeliveryNotes);
-            document.getElementById('tripForm').addEventListener('submit', handleSubmit);
+            // Add event listeners
+            const siteSelect = document.getElementById('siteSelect');
+            const tripForm = document.getElementById('tripForm');
+            
+            if (siteSelect) {
+                siteSelect.addEventListener('change', loadDeliveryNotes);
+            }
+            
+            if (tripForm) {
+                tripForm.addEventListener('submit', handleSubmit);
+                console.log('Form event listener added');
+            }
+            
+            // Add click listener to button as backup
+            const addTripBtn = document.getElementById('addTripBtn');
+            if (addTripBtn) {
+                addTripBtn.addEventListener('click', function(e) {
+                    console.log('Button clicked');
+                    if (e.target.type === 'submit') {
+                        // Let form handle it
+                        return;
+                    }
+                    e.preventDefault();
+                    handleSubmit(e);
+                });
+            }
             
             // Toggle delivery notes table
             document.getElementById('dnSelectBtn').addEventListener('click', function() {
@@ -186,7 +211,12 @@
 
         async function loadSites() {
             try {
-                const response = await fetch('api/get-sites.php');
+                const response = await fetch('api/get-sites.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) return;
                 const result = await response.json();
                 
                 if (result.success) {
@@ -199,7 +229,7 @@
                     });
                 }
             } catch (error) {
-                showMessage('Error loading sites', 'error');
+                // Silently handle error when switching pages
             }
         }
 
@@ -208,9 +238,11 @@
             const dnBtn = document.getElementById('dnSelectBtn');
             const dnTableBody = document.getElementById('dnTableBody');
             
+            // Reset delivery note selection
             dnTableBody.innerHTML = '';
             document.getElementById('selectedDN').value = '';
-            dnBtn.textContent = 'Select Delivery Note';
+            dnBtn.innerHTML = 'Select Delivery Note';
+            document.getElementById('dnTable').style.display = 'none';
             
             if (!siteCode) {
                 dnBtn.disabled = true;
@@ -218,7 +250,11 @@
             }
             
             try {
-                const response = await fetch(`api/get-delivery-notes-by-site.php?site_code=${siteCode}&limit=100`);
+                const response = await fetch('api/get-delivery-notes-by-site.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ site_code: siteCode, limit: 100 })
+                });
                 const result = await response.json();
                 
                 if (result.success) {
@@ -253,7 +289,12 @@
 
         async function loadTrucks() {
             try {
-                const response = await fetch('api/get-trucks.php');
+                const response = await fetch('api/get-trucks.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) return;
                 const result = await response.json();
                 
                 if (result.success) {
@@ -266,21 +307,37 @@
                     });
                 }
             } catch (error) {
-                showMessage('Error loading trucks', 'error');
+                // Silently handle error when switching pages
             }
         }
 
         async function handleSubmit(e) {
             e.preventDefault();
+            console.log('Form submitted');
+            
+            // Validate required fields
+            const siteCode = document.getElementById('siteSelect').value;
+            const dnNo = document.getElementById('selectedDN').value;
+            const truckId = document.getElementById('truckSelect').value;
+            const status = document.getElementById('statusSelect').value;
+            
+            console.log('Form data:', { siteCode, dnNo, truckId, status });
+            
+            if (!siteCode || !dnNo || !truckId || !status) {
+                showMessage('Please fill all required fields', 'error');
+                return;
+            }
             
             const formData = {
-                assignment_id: Date.now(),
-                site_Code: document.getElementById('siteSelect').value,
-                dn_no: document.getElementById('selectedDN').value,
-                truck_id: document.getElementById('truckSelect').value,
-                status: document.getElementById('statusSelect').value,
+                assignment_id: Math.floor(Math.random() * 999999) + 1,
+                site_Code: siteCode,
+                dn_no: dnNo,
+                truck_id: parseInt(truckId),
+                status: status,
                 Company_code: '1000'
             };
+            
+            console.log('Sending data:', formData);
             
             try {
                 const response = await fetch('api/add-trip.php', {
@@ -289,26 +346,39 @@
                     body: JSON.stringify(formData)
                 });
                 
+                console.log('Response status:', response.status);
                 const result = await response.json();
+                console.log('Response data:', result);
                 
                 if (result.success) {
-                    showMessage('Trip added successfully!', 'success');
+                    showMessage('Trip added successfully! ID: ' + result.assignment_id, 'success');
+                    
+                    // Reset form
                     document.getElementById('tripForm').reset();
                     document.getElementById('dnSelectBtn').disabled = true;
                     document.getElementById('selectedDN').value = '';
-                    document.getElementById('dnSelectBtn').textContent = 'Select Delivery Note';
-                    loadTrips();
+                    document.getElementById('dnSelectBtn').innerHTML = 'Select Delivery Note';
+                    document.getElementById('dnTable').style.display = 'none';
+                    
+                    // Refresh trips table
+                    await loadTrips();
                 } else {
                     showMessage('Error: ' + result.error, 'error');
                 }
             } catch (error) {
-                showMessage('Error adding trip', 'error');
+                console.error('Fetch error:', error);
+                showMessage('Error adding trip: ' + error.message, 'error');
             }
         }
 
         async function loadTrips() {
             try {
-                const response = await fetch('api/get-trips.php');
+                const response = await fetch('api/get-trips.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) return;
                 const result = await response.json();
                 
                 if (result.success) {
@@ -317,7 +387,7 @@
                     showMessage('Error loading trips', 'error');
                 }
             } catch (error) {
-                showMessage('Error loading trips', 'error');
+                // Silently handle error when switching pages
             }
         }
 

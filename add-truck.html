@@ -193,7 +193,10 @@
 
       async function loadTrucks() {
         try {
-          const response = await fetch("api/get-trucks.php");
+          const response = await fetch("api/get-trucks.php", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
           const result = await response.json();
 
           if (result.success) {
@@ -269,7 +272,10 @@
 
       async function editTruck(id) {
         try {
-          const response = await fetch("api/get-trucks.php");
+          const response = await fetch("api/get-trucks.php", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
           const result = await response.json();
 
           if (result.success) {

@@ -181,7 +181,10 @@
 
         async function loadAssignments() {
             try {
-                const response = await fetch('api/get-trips.php');
+                const response = await fetch('api/get-trips.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 const result = await response.json();
                 
                 if (result.success) {
@@ -200,7 +203,10 @@
 
         async function loadAccounts() {
             try {
-                const response = await fetch('api/get-accounts.php');
+                const response = await fetch('api/get-accounts.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 const result = await response.json();
                 
                 if (result.success) {
