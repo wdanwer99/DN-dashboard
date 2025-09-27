@@ -29,8 +29,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $countStmt->execute([$siteCode]);
     $totalCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // Get paginated results
-    $stmt = $pdo->prepare("SELECT * FROM Delivery_Notes WHERE site_Code = ? ORDER BY created_at DESC LIMIT $offset, $limit");
+    // Get paginated results with items count
+    $stmt = $pdo->prepare("
+        SELECT dn.*, 
+               COALESCE(COUNT(di.id), 0) as items_count
+        FROM Delivery_Notes dn 
+        LEFT JOIN dn_items di ON dn.dn_no = di.dn_no 
+        WHERE dn.site_Code = ? 
+        GROUP BY dn.dn_no 
+        ORDER BY dn.created_at DESC 
+        LIMIT $offset, $limit
+    ");
     $stmt->execute([$siteCode]);
     $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

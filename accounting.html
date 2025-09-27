@@ -24,19 +24,19 @@
                 <li class="navList">
                     <a href="delivery-notes.html">
                         <ion-icon name="folder-outline"></ion-icon>
-                        <span class="links">Delivery notes</span>
+                        <span class="links">DN Managment</span>
                     </a>
                 </li>
                 <li class="navList">
                     <a href="add-trip.html">
                         <ion-icon name="car-sport-outline"></ion-icon>
-                        <span class="links">Add Trip</span>
+                        <span class="links">Trips Management</span>
                     </a>
                 </li>
                 <li class="navList active">
                     <a href="accounting.html">
                         <ion-icon name="calculator-outline"></ion-icon>
-                        <span class="links">Accounting</span>
+                        <span class="links">finance Management</span>
                     </a>
                 </li>
                 <li class="nav-divider"></li>
@@ -133,11 +133,12 @@
                             <th>Balance</th>
                             <th>Date</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="accountsTableBody">
                         <tr>
-                            <td colspan="10" class="empty-state">
+                            <td colspan="11" class="empty-state">
                                 <div class="loading-spinner"></div>
                                 <br>Loading accounts...
                             </td>
@@ -166,7 +167,7 @@
                 <li class="navList">
                     <a href="delivery-notes.html">
                         <ion-icon name="folder-outline"></ion-icon>
-                        <span class="links">View Delivery Notes</span>
+                        <span class="links">View DN Managment</span>
                     </a>
                 </li>
             `;
@@ -225,7 +226,7 @@
             if (accounts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="empty-state">
+                        <td colspan="11" class="empty-state">
                             <ion-icon name="calculator-outline" class="empty-icon"></ion-icon>
                             <br>No account records found
                         </td>
@@ -240,12 +241,22 @@
                     <td>${account.site_Code || 'N/A'}</td>
                     <td>${account.dn_no || 'N/A'}</td>
                     <td>${account.truck_no || 'N/A'}</td>
-                    <td>$${parseFloat(account.cost).toFixed(2)}</td>
-                    <td>$${parseFloat(account.advance_payment).toFixed(2)}</td>
-                    <td>$${parseFloat(account.Gove_Fees).toFixed(2)}</td>
-                    <td>$${parseFloat(account.balance).toFixed(2)}</td>
+                    <td>${parseFloat(account.cost).toFixed(2)} SDG</td>
+                    <td>${parseFloat(account.advance_payment).toFixed(2)} SDG</td>
+                    <td>${parseFloat(account.Gove_Fees).toFixed(2)} SDG</td>
+                    <td>${parseFloat(account.balance).toFixed(2)} SDG</td>
                     <td>${new Date(account.created_at).toLocaleDateString()}</td>
                     <td><span class="status-badge status-${account.payment_status.toLowerCase()}">${account.payment_status}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view" onclick="viewRecordDetails(${account.assignment_id})" title="View Details">
+                                <ion-icon name="eye-outline" style="pointer-events: none;"></ion-icon>
+                            </button>
+                            <button class="action-btn edit" onclick="managePayments(${account.assignment_id})" title="Manage Payments">
+                                <ion-icon name="card-outline" style="pointer-events: none;"></ion-icon>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -291,6 +302,14 @@
             messageDiv.className = `upload-status ${type}`;
             messageDiv.classList.remove('hidden');
             setTimeout(() => messageDiv.classList.add('hidden'), 3000);
+        }
+        
+        function viewRecordDetails(assignmentId) {
+            window.location.href = `account-details.html?assignment=${assignmentId}`;
+        }
+        
+        function managePayments(assignmentId) {
+            window.location.href = `payment-management.html?assignment=${assignmentId}`;
         }
     </script>
     

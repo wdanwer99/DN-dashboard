@@ -25,19 +25,19 @@
           <li class="navList">
             <a href="delivery-notes.html">
               <ion-icon name="folder-outline"></ion-icon>
-              <span class="links">Delivery notes</span>
+              <span class="links">DN Managment</span>
             </a>
           </li>
           <li class="navList">
             <a href="add-trip.html">
               <ion-icon name="car-sport-outline"></ion-icon>
-              <span class="links">Add Trip</span>
+              <span class="links">Trips Management</span>
             </a>
           </li>
           <li class="navList">
             <a href="accounting.html">
               <ion-icon name="calculator-outline"></ion-icon>
-              <span class="links">Accounting</span>
+              <span class="links">finance Management</span>
             </a>
           </li>
           <li class="nav-divider"></li>
@@ -297,29 +297,29 @@
           if (result.success) {
             const site = result.data.find((s) => s.id == id);
             if (site) {
-              document.querySelector('[name="site_Code"]').value =
-                site.site_Code || "";
-              document.querySelector('[name="Site_Name"]').value =
-                site.Site_Name || "";
-              document.querySelector('[name="Tel_Operator"]').value =
-                site.Tel_Operator || "";
-              document.querySelector('[name="Address"]').value =
-                site.Address || "";
-              document.querySelector('[name="GPS_Latitude"]').value =
-                site.GPS_Latitude || "";
-              document.querySelector('[name="GPS_Longitude"]').value =
-                site.GPS_Longitude || "";
-              document.querySelector('[name="Site_Type"]').value =
-                site.Site_Type || "";
-              document.querySelector('[name="Access_Instructions"]').value =
-                site.Access_Instructions || "";
-              document.querySelector('[name="Company_code"]').value =
-                site.Company_code || "";
+              const siteCodeField = document.querySelector('[name="site_Code"]');
+              const siteNameField = document.querySelector('[name="Site_Name"]');
+              const operatorField = document.querySelector('[name="Tel_Operator"]');
+              const addressField = document.querySelector('[name="Address"]');
+              const latField = document.querySelector('[name="Location link"]');
+              const lngField = document.querySelector('[name="Location link data"]');
+              const typeField = document.querySelector('[name="Site_Type"]');
+              const instructionsField = document.querySelector('[name="Access_Instructions"]');
+              
+              if (siteCodeField) siteCodeField.value = site.site_Code || "";
+              if (siteNameField) siteNameField.value = site.Site_Name || "";
+              if (operatorField) operatorField.value = site.Tel_Operator || "";
+              if (addressField) addressField.value = site.Address || "";
+              if (latField) latField.value = site.GPS_Latitude || "";
+              if (lngField) lngField.value = site.GPS_Longitude || "";
+              if (typeField) typeField.value = site.Site_Type || "";
+              if (instructionsField) instructionsField.value = site.Access_Instructions || "";
+              
               editingId = id;
             }
           }
         } catch (error) {
-          alert("Error loading site: " + error.message);
+          console.error("Error loading site:", error);
         }
       }
 

@@ -8,13 +8,28 @@ require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        $stmt = $pdo->prepare("SELECT taa.*, ta.site_Code, ta.dn_no, t.truck_no, t.driver_name 
-                              FROM truck_assignment_accounts taa 
-                              LEFT JOIN truck_assignments ta ON taa.assignment_id = ta.assignment_id 
-                              LEFT JOIN trucks_info t ON ta.truck_id = t.truck_id 
-                              ORDER BY taa.created_at DESC");
+        $stmt = $pdo->prepare("
+            SELECT 
+                taa.*,
+                ta.site_Code, 
+                ta.dn_no, 
+                t.truck_no, 
+                t.driver_name,
+                (taa.cost - taa.advance_payment - COALESCE(taa.Gove_Fees, 0)) as balance
+            FROM truck_assignment_accounts taa 
+            LEFT JOIN truck_assignments ta ON taa.assignment_id = ta.assignment_id 
+            LEFT JOIN trucks_info t ON ta.truck_id = t.truck_id 
+            ORDER BY taa.created_at DESC
+        ");
         $stmt->execute();
         $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Ensure balance is calculated for each record
+        foreach ($accounts as &$account) {
+            if (!isset($account['balance'])) {
+                $account['balance'] = $account['cost'] - $account['advance_payment'] - ($account['Gove_Fees'] ?? 0);
+            }
+        }
         
         echo json_encode(['success' => true, 'data' => $accounts]);
         

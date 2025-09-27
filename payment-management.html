@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Payment Management</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <div class="logo-image">
+                <img src="" alt="">
+            </div>
+        </div>
+        <div class="menu-items">
+            <ul class="navLinks">
+                <li class="navList">
+                    <a href="accounting.html">
+                        <ion-icon name="arrow-back-outline"></ion-icon>
+                        <span class="links">Back to Accounting</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="container">
+            <div class="title">
+                <ion-icon name="card-outline"></ion-icon>
+                <span class="text">Payment Management</span>
+            </div>
+
+            <div class="upload-form">
+                <form id="paymentForm" class="form-grid">
+                    <input type="number" id="paymentAmount" placeholder="Payment Amount" step="0.01" required>
+                    <input type="date" id="paymentDate" required>
+
+                    <textarea id="paymentNotes" placeholder="Payment Notes" rows="2"></textarea>
+                    <button type="submit">
+                        <ion-icon name="add-outline"></ion-icon>
+                        Update Payment
+                    </button>
+                </form>
+            </div>
+
+            <div id="message" class="upload-status hidden"></div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <ion-icon name="information-circle-outline"></ion-icon>
+                    Account Summary
+                </div>
+                <div id="accountSummary" class="account-details">
+                    <div class="loading-spinner"></div>
+                    <br>Loading account summary...
+                </div>
+            </div>
+
+
+        </div>
+    </section>
+
+    <script>
+        if (!sessionStorage.getItem('userRole') || (sessionStorage.getItem('userRole') !== 'admin' && sessionStorage.getItem('userRole') !== 'accounting')) {
+            window.location.href = 'index.html';
+        }
+
+        let assignmentId = null;
+        let currentBalance = 0;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            assignmentId = urlParams.get('assignment');
+            
+            if (assignmentId) {
+                loadAccountSummary();
+            } else {
+                document.getElementById('accountSummary').innerHTML = '<p>No assignment ID provided</p>';
+            }
+            
+            document.getElementById('paymentForm').addEventListener('submit', handlePaymentSubmit);
+        });
+
+        async function loadAccountSummary() {
+            try {
+                const response = await fetch('api/get-account-details.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assignment_id: assignmentId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    displayAccountSummary(result.data);
+                } else {
+                    document.getElementById('accountSummary').innerHTML = '<p>Account not found</p>';
+                }
+            } catch (error) {
+                document.getElementById('accountSummary').innerHTML = '<p>Error loading account</p>';
+            }
+        }
+
+        function displayAccountSummary(account) {
+            currentBalance = parseFloat(account.balance);
+            const summaryHtml = `
+                <div class="data-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 20px;">
+                    <div class="data-item">
+                        <strong>Assignment ID</strong>
+                        <span>${account.assignment_id}</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Total Cost</strong>
+                        <span>${parseFloat(account.cost).toFixed(2)} SDG</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Current Balance</strong>
+                        <span id="currentBalance">${currentBalance.toFixed(2)} SDG</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('accountSummary').innerHTML = summaryHtml;
+        }
+
+        async function loadPayments() {
+            try {
+                const response = await fetch('api/get-payments.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assignment_id: assignmentId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayPayments(result.data);
+                } else {
+                    document.getElementById('paymentsTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">No payments found</td></tr>'
+                }
+            } catch (error) {
+                document.getElementById('paymentsTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">Error loading payments</td></tr>';
+            }
+        }
+
+        function displayPayments(payments) {
+            const tbody = document.getElementById('paymentsTableBody');
+            
+            if (payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No payments recorded</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = payments.map(payment => `
+                <tr>
+                    <td>${new Date(payment.payment_date).toLocaleDateString()}</td>
+                    <td>$${parseFloat(payment.amount).toFixed(2)}</td>
+                    <td>${payment.notes || 'N/A'}</td>
+                    <td>
+                        ${payment.status === 'pending' ? 
+                            `<button class="action-btn edit" onclick="confirmPayment(${payment.id})" title="Confirm">
+                                <ion-icon name="checkmark-outline" style="pointer-events: none;"></ion-icon>
+                            </button>` : 
+                            `<span class="status-badge status-paid">Confirmed</span>`
+                        }
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function handlePaymentSubmit(e) {
+            e.preventDefault();
+            console.log('Form submitted, assignmentId:', assignmentId);
+            
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+            const paymentDate = document.getElementById('paymentDate').value;
+            
+            if (!amount || !paymentDate) {
+                showMessage('Please fill in amount and payment date', 'error');
+                return;
+            }
+            
+            if (amount > currentBalance) {
+                alert('Current Balance is not enough. Available balance: ' + currentBalance.toFixed(2) + ' SDG');
+                return;
+            }
+            
+            const formData = {
+                assignment_id: assignmentId,
+                amount: parseFloat(amount),
+                payment_date: paymentDate,
+                notes: document.getElementById('paymentNotes').value
+            };
+            
+            console.log('Sending data:', formData);
+            
+            try {
+                const response = await fetch('api/update-payment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Result:', result);
+                
+                if (result.success) {
+                    showMessage('Payment updated successfully!', 'success');
+                    document.getElementById('paymentForm').reset();
+                    await loadAccountSummary();
+                } else {
+                    showMessage('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error updating payment: ' + error.message, 'error');
+            }
+        }
+
+        async function confirmPayment(paymentId) {
+            if (!confirm('Confirm this payment? This will update the account balance.')) return;
+            
+            try {
+                const response = await fetch('api/confirm-payment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ payment_id: paymentId, assignment_id: assignmentId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Payment confirmed and balance updated!', 'success');
+                    await loadAccountSummary();
+                    await loadPayments();
+                } else {
+                    showMessage('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error confirming payment', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `upload-status ${type}`;
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => messageDiv.classList.add('hidden'), 3000);
+        }
+    </script>
+    
+    <script src="js/session.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

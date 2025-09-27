@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Account Details</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <div class="logo-image">
+                <img src="" alt="">
+            </div>
+        </div>
+        <div class="menu-items">
+            <ul class="navLinks">
+                <li class="navList">
+                    <a href="finance Management.html">
+                        <ion-icon name="arrow-back-outline"></ion-icon>
+                        <span class="links">Back to finance Management</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="container">
+            <div class="title">
+                <ion-icon name="document-text-outline"></ion-icon>
+                <span class="text">Account Record Details</span>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <ion-icon name="information-circle-outline"></ion-icon>
+                    Account Information
+                </div>
+                <div id="accountDetails" class="account-details">
+                    <div class="loading-spinner"></div>
+                    <br>Loading account details...
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        if (!sessionStorage.getItem('userRole') || (sessionStorage.getItem('userRole') !== 'admin' && sessionStorage.getItem('userRole') !== 'accounting')) {
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const assignmentId = urlParams.get('assignment');
+            
+            if (assignmentId) {
+                loadAccountDetails(assignmentId);
+            } else {
+                document.getElementById('accountDetails').innerHTML = '<p>No assignment ID provided</p>';
+            }
+        });
+
+        async function loadAccountDetails(assignmentId) {
+            try {
+                const response = await fetch('api/get-account-details.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assignment_id: assignmentId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    displayAccountDetails(result.data);
+                } else {
+                    document.getElementById('accountDetails').innerHTML = '<p>Account record not found</p>';
+                }
+            } catch (error) {
+                document.getElementById('accountDetails').innerHTML = '<p>Error loading account details</p>';
+            }
+        }
+
+        function displayAccountDetails(account) {
+            const detailsHtml = `
+                <div class="data-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px;">
+                    <div class="data-item">
+                        <strong>Assignment ID</strong>
+                        <span>${account.assignment_id}</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Site Code</strong>
+                        <span>${account.site_Code || 'N/A'}</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>DN Number</strong>
+                        <span>${account.dn_no || 'N/A'}</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Truck Number</strong>
+                        <span>${account.truck_no || 'N/A'}</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Total Cost</strong>
+                        <span>${parseFloat(account.cost).toFixed(2)} SDG</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Advance Payment</strong>
+                        <span>${parseFloat(account.advance_payment).toFixed(2)} SDG</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Government Fees</strong>
+                        <span>${parseFloat(account.Gove_Fees).toFixed(2)} SDG</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Balance</strong>
+                        <span>${parseFloat(account.balance).toFixed(2)} SDG</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Payment Status</strong>
+                        <span class="status-badge status-${account.payment_status.toLowerCase()}">${account.payment_status}</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Payment Date</strong>
+                        <span>${account.payment_date ? new Date(account.payment_date).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                    <div class="data-item" style="grid-column: 1 / -1;">
+                        <strong>Remarks</strong>
+                        <span>${account.remarks || 'No remarks'}</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>Created Date</strong>
+                        <span>${new Date(account.created_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('accountDetails').innerHTML = detailsHtml;
+        }
+    </script>
+    
+    <script src="js/session.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>
