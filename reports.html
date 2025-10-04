@@ -5,6 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="global-loader.css">
+    <style>
+        .charts-container {
+            display: flex;
+            gap: 30px;
+            margin: 20px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .chart-item {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 200px;
+        }
+        .chart-item h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .chart-count {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+            color: #333;
+        }
+        #itemsChart, #sitesChart, #dnChart {
+            max-width: 150px;
+            max-height: 150px;
+        }
+        .chart-count.loading {
+            animation: pulse 1.5s ease-in-out infinite;
+            color: #666;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status-chart-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        #statusChart {
+            max-width: 300px;
+            max-height: 300px;
+        }
+    </style>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <title>Reports - Admin</title>
@@ -86,6 +135,25 @@
                 <span class="text">Reports Dashboard</span>
             </div>
 
+            <!-- Dashboard Overview Charts -->
+            <div class="charts-container">
+                <div class="chart-item">
+                    <h4>Total Items</h4>
+                    <canvas id="itemsChart" width="200" height="200"></canvas>
+                    <div id="itemsCount" class="chart-count loading">⏳</div>
+                </div>
+                <div class="chart-item">
+                    <h4>Total Sites</h4>
+                    <canvas id="sitesChart" width="200" height="200"></canvas>
+                    <div id="sitesCount" class="chart-count loading">⏳</div>
+                </div>
+                <div class="chart-item">
+                    <h4>Total Delivery Notes</h4>
+                    <canvas id="dnChart" width="200" height="200"></canvas>
+                    <div id="dnCount" class="chart-count loading">⏳</div>
+                </div>
+            </div>
+
             <!-- Report Type Selection -->
             <div class="upload-form">
                 <h3>
@@ -129,6 +197,17 @@
                 </div>
             </div>
 
+            <!-- Status Chart Section -->
+            <div id="statusChartSection" class="upload-form hidden">
+                <h3>
+                    <ion-icon name="pie-chart-outline"></ion-icon>
+                    Status Distribution
+                </h3>
+                <div class="status-chart-container">
+                    <canvas id="statusChart" width="500" height="500"></canvas>
+                </div>
+            </div>
+
             <!-- Report Display -->
             <div id="reportContainer" class="table-container hidden">
                 <div class="table-header">
@@ -141,6 +220,7 @@
     </section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
             window.location.href = 'index.html';
@@ -148,6 +228,145 @@
 
         let currentReportData = [];
         let filteredData = [];
+
+        // Load dashboard charts on page load
+        document.addEventListener('DOMContentLoaded', loadDashboardCharts);
+
+        async function loadDashboardCharts() {
+            try {
+                console.log('Loading dashboard charts...');
+                const response = await fetch('api/dashboard-stats.php');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const text = await response.text();
+                console.log('Raw response:', text);
+                
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    throw new Error('Invalid JSON response from server');
+                }
+                
+                console.log('Dashboard counts result:', result);
+                
+                if (result.success && result.data) {
+                    const items = parseInt(result.data.items) || 0;
+                    const sites = parseInt(result.data.sites) || 0;
+                    const dns = parseInt(result.data.delivery_notes) || 0;
+                    
+                    createPieChart('itemsChart', items, '#4CAF50');
+                    createPieChart('sitesChart', sites, '#2196F3');
+                    createPieChart('dnChart', dns, '#FF9800');
+                    
+                    updateChartCount('itemsCount', items.toLocaleString());
+                    updateChartCount('sitesCount', sites.toLocaleString());
+                    updateChartCount('dnCount', dns.toLocaleString());
+                } else {
+                    console.error('Failed to load counts:', result.error || 'Unknown error');
+                    updateChartCount('itemsCount', 'Error');
+                    updateChartCount('sitesCount', 'Error');
+                    updateChartCount('dnCount', 'Error');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard counts:', error);
+                updateChartCount('itemsCount', 'Error');
+                updateChartCount('sitesCount', 'Error');
+                updateChartCount('dnCount', 'Error');
+            }
+        }
+
+        function updateChartCount(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('loading');
+                element.textContent = value;
+            }
+        }
+
+        function createPieChart(canvasId, count, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const maxValue = Math.max(count, 10);
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [count, maxValue * 0.2],
+                        backgroundColor: [color, '#f0f0f0'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    cutout: '70%',
+                    animation: {
+                        animateRotate: true,
+                        duration: 1000
+                    }
+                }
+            });
+        }
+
+        let statusChart = null;
+        function createStatusPieChart(data) {
+            if (statusChart) {
+                statusChart.destroy();
+            }
+            
+            const statusCounts = {};
+            data.forEach(row => {
+                const status = row.DN_Status || 'Unknown';
+                statusCounts[status] = (statusCounts[status] || 0) + parseInt(row.count || 0);
+            });
+            
+            const labels = Object.keys(statusCounts);
+            const counts = Object.values(statusCounts);
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+            
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            statusChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
         async function loadReport() {
             const reportType = document.getElementById('reportType').value;
@@ -193,22 +412,28 @@
                 case 'dn-status':
                     title = 'DN Counts per Status';
                     html = generateStatusCountTable(data, ['Status', 'Count']);
+                    createStatusPieChart(data);
+                    document.getElementById('statusChartSection').classList.remove('hidden');
                     break;
                 case 'dn-details':
                     title = 'DN Details';
                     html = generateDetailsTable(data);
+                    document.getElementById('statusChartSection').classList.add('hidden');
                     break;
                 case 'dn-sites':
                     title = 'DN Counts per Site per Status';
                     html = generateSiteStatusTable(data);
+                    document.getElementById('statusChartSection').classList.add('hidden');
                     break;
                 case 'trips-cars':
                     title = 'Trip Counts per Car per Status';
                     html = generateTripCarTable(data);
+                    document.getElementById('statusChartSection').classList.add('hidden');
                     break;
                 case 'payments':
                     title = 'Payment Counts per Status';
                     html = generatePaymentsTable(data);
+                    document.getElementById('statusChartSection').classList.add('hidden');
                     break;
             }
 

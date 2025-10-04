@@ -1,0 +1,39 @@
+/* Location Button Tooltip Styles - Isolated
+.location-btn {
+  position: relative;
+}
+
+.location-btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: normal;
+  white-space: nowrap;
+  opacity: 1;
+  visibility: visible;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  min-width: max-content;
+}
+
+.location-btn[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  opacity: 1;
+  visibility: visible;
+  z-index: 10000;
+  pointer-events: none;
+} */

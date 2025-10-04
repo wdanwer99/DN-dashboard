@@ -6,6 +6,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="global-loader.css" />
+    <link rel="stylesheet" href="location-tooltips.css" />
+    <style>
+      .location-icons {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        align-items: center;
+      }
+      .location-btn {
+        background: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 4px 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 12px;
+        min-width: 20px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      /* .location-btn:hover {
+        transform: scale(1.05);
+        border-color: #999;
+      } */
+      .location-btn.received {
+        color: #10b981;
+        border-color: #10b981;
+      }
+      .location-btn.delivered {
+        color: #3b82f6;
+        border-color: #3b82f6;
+      }
+      .location-btn.collected {
+        color: #f59e0b;
+        border-color: #f59e0b;
+      }
+      .location-btn ion-icon {
+        font-size: 14px;
+      }
+      .col-locations {
+        width: 80px;
+        text-align: center;
+      }
+      .col-status {
+        width: 120px;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .col-dn {
+        width: 150px;
+        white-space: nowrap;
+        overflow: visible;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .table-scroll-wrapper {
+        overflow-x: auto;
+        overflow-y: visible;
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .delivery-notes-table {
+        min-width: 1200px;
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+      }
+      .table-scroll-wrapper::-webkit-scrollbar {
+        height: 8px;
+      }
+      .table-scroll-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+      .table-scroll-wrapper::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      .table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+
+    </style>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <script>
@@ -63,12 +157,6 @@
               <span class="links">Finance Management</span>
             </a>
           </li>
-          <li class="navList">
-            <a href="reports.html">
-              <ion-icon name="bar-chart-outline"></ion-icon>
-              <span class="links">Reports</span>
-            </a>
-          </li>
           <li class="nav-divider"></li>
           <li class="navList">
             <a href="add-site.html">
@@ -86,6 +174,13 @@
             <a href="add_item.html">
               <ion-icon name="cube-outline"></ion-icon>
               <span class="links">Add Item</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="reports.html">
+              <ion-icon name="bar-chart-outline"></ion-icon>
+              <span class="links">Reports</span>
             </a>
           </li>
         </ul>
@@ -140,7 +235,7 @@
                 <input
                   type="text"
                   id="searchInput"
-                  placeholder="Search delivery notes by DN, customer, project..."
+                  placeholder="Search delivery notes by DN number"
                   onkeypress="handleSearchKeyPress(event)"
                 />
                 <button class="search-btn" onclick="performSearch()">
@@ -301,24 +396,24 @@
               <ion-icon name="list-outline"></ion-icon>
               <span id="tableTitle">All Delivery Notes</span>
             </div>
-            <table class="delivery-notes-table">
+            <div class="table-scroll-wrapper">
+              <table class="delivery-notes-table">
               <thead>
                 <tr>
                   <th class="col-dn">DN No</th>
-                  <th class="col-mr">MR No</th>
                   <th class="col-site">Site</th>
-                  <th class="col-customer">Customer</th>
                   <th class="col-project">Project</th>
                   <th class="col-manager">Manager</th>
                   <th class="col-warehouse">Warehouse</th>
                   <th class="col-date">Date</th>
                   <th class="col-status">Status</th>
+                  <th class="col-locations">Locations</th>
                   <th class="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody id="deliveryNotesTableBody">
                 <tr>
-                  <td colspan="10" class="empty-state">
+                  <td colspan="11" class="empty-state">
                     <ion-icon name="document-outline" class="empty-icon"></ion-icon>
                     <br>Loading delivery notes...
                   </td>
@@ -326,7 +421,7 @@
               </tbody>
               <tfoot>
                 <tr id="paginationRow" style="display: none;">
-                  <td colspan="10" style="text-align: center; padding: 15px; background: #f8f9fa; border-top: 2px solid #dee2e6;">
+                  <td colspan="9" style="text-align: center; padding: 15px; background: #f8f9fa; border-top: 2px solid #dee2e6;">
                     <div id="pagination" style="display: flex; justify-content: center; align-items: center; gap: 15px;">
                       <button id="prevBtn" onclick="changeTablePage(-1)" style="padding: 8px 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Previous</button>
                       <span id="pageInfo" style="font-weight: 500;"></span>
@@ -335,7 +430,8 @@
                   </td>
                 </tr>
               </tfoot>
-            </table>
+              </table>
+            </div>
           </div>
 
         </div>
@@ -1231,7 +1327,7 @@
         if (notes.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="10" class="empty-state">
+              <td colspan="8" class="empty-state">
                 <ion-icon name="document-outline" class="empty-icon"></ion-icon>
                 <br>No delivery notes found
               </td>
@@ -1267,9 +1363,7 @@
             (note) => `
           <tr>
             <td class="col-dn"><strong>${note.dn_no || "N/A"}</strong></td>
-            <td class="col-mr">${note.mr_no || "N/A"}</td>
             <td class="col-site">${note.site_Code || "N/A"}</td>
-            <td class="col-customer" title="${note.Customer || "N/A"}">${truncateText(note.Customer || "N/A", 20)}</td>
             <td class="col-project" title="${note.Project_Name || "N/A"}">${truncateText(note.Project_Name || "N/A", 25)}</td>
             <td class="col-manager" title="${note.Product_Manager || "N/A"}">${truncateText(note.Product_Manager || "N/A", 15)}</td>
             <td class="col-warehouse" title="${note.From_Warehouse || "N/A"}">${truncateText(note.From_Warehouse || "N/A", 15)}</td>
@@ -1277,6 +1371,19 @@
             <td class="col-status"><span class="status-badge status-${(
               note.DN_Status || "created"
             ).toLowerCase()}">${note.DN_Status || "Created"}</span></td>
+            <td class="col-locations">
+              <div class="location-icons">
+                <button class="location-btn received" onclick="openLocation('${note.received_location || ''}', 'Received')" title="Received location">
+                  <ion-icon name="location" style="pointer-events: none;"></ion-icon>
+                </button>
+                <button class="location-btn delivered" onclick="openLocation('${note.delivered_location || ''}', 'Delivered')" title="Delivered location">
+                  <ion-icon name="location" style="pointer-events: none;"></ion-icon>
+                </button>
+                <button class="location-btn collected" onclick="openLocation('${note.collected_location || ''}', 'Collected')" title="Collected location">
+                  <ion-icon name="location" style="pointer-events: none;"></ion-icon>
+                </button>
+              </div>
+            </td>
             <td class="col-actions">
               <div class="action-buttons">
                 <button class="action-btn view" onclick="viewDeliveryNoteItems('${note.dn_no}')" title="View">
@@ -1476,6 +1583,21 @@
         } catch (error) {
           alert('Error deleting delivery note: ' + error.message);
         }
+      }
+      
+      function openLocation(locationUrl, locationType) {
+        if (!locationUrl || locationUrl.trim() === '') {
+          alert(`No ${locationType} location available for this delivery note.`);
+          return;
+        }
+        
+        // Check if URL starts with http/https, if not add https://
+        let url = locationUrl.trim();
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        
+        window.open(url, '_blank');
       }
     </script>
 
