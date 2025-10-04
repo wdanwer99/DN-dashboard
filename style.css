@@ -18,13 +18,13 @@ nav .logo {
 }
 
 nav .logo-image {
-  width: 45px;
-  height: 90px;
+  width: 100px;
+  height: 120px;
 }
 
 nav .logo-image img {
   width: auto;
-  height: 60px;
+  height: 120px;
   object-fit: cover;
   padding-left: 18px;
   margin-top: 10px;
@@ -46,6 +46,10 @@ nav .menu-items {
   flex-direction: column;
   height: calc(100vh - 150px);
   justify-content: space-between;
+}
+
+nav .bottom-link {
+  margin-bottom: 30px;
 }
 
 nav .menu-items li {
@@ -985,6 +989,36 @@ nav .menu-items li.active {
   margin-top: 10px;
   text-align: center;
   display: none;
+}
+
+/* Browser compatibility fixes */
+.delivery-notes-table {
+  -webkit-overflow-scrolling: touch;
+}
+
+.upload-btn {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input, select, textarea {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* Flexbox fallbacks for IE */
+.upload-container {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.action-buttons {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
 }
 
 /* Mobile Responsive Styles */

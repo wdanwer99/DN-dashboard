@@ -5,13 +5,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="global-loader.css" />
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <title>Add Site - Admin</title>
   </head>
   <body>
     <nav>
       <div class="logo">
         <div class="logo-image">
-          <img src="" alt="" />
+          <img src="assets/logo2.png" alt="Company Logo" />
         </div>
       </div>
       <div class="menu-items">
@@ -37,7 +40,7 @@
           <li class="navList">
             <a href="accounting.html">
               <ion-icon name="calculator-outline"></ion-icon>
-              <span class="links">finance Management</span>
+              <span class="links">Finance Management</span>
             </a>
           </li>
           <li class="nav-divider"></li>
@@ -187,6 +190,8 @@
           }
 
           try {
+            globalLoader.show(editingId ? 'Updating site...' : 'Adding site...');
+            
             const url = editingId ? "api/update-site.php" : "api/add-site.php";
             const response = await fetch(url, {
               method: "POST",
@@ -194,25 +199,30 @@
             });
 
             const result = await response.json();
+            globalLoader.hide();
 
             if (result.success) {
-              alert(
+              globalLoader.showMessage(
                 editingId
                   ? "Site updated successfully!"
-                  : "Site added successfully!"
+                  : "Site added successfully!",
+                'success'
               );
               this.reset();
               editingId = null;
               loadSites();
             } else {
-              alert("Error: " + result.error);
+              globalLoader.showMessage("Error: " + result.error, 'error');
             }
           } catch (error) {
-            alert("Error: " + error.message);
+            globalLoader.hide();
+            globalLoader.showMessage("Error: " + error.message, 'error');
           }
         });
 
       async function loadSites() {
+        globalLoader.show('Loading sites...');
+        
         try {
           const response = await fetch("api/get-sites.php", {
             method: 'POST',
@@ -225,10 +235,12 @@
             displaySites(allSites);
             document.getElementById("sitesTable").classList.remove("hidden");
           } else {
-            alert("Error loading sites: " + result.error);
+            globalLoader.showMessage("Error loading sites: " + result.error, 'error');
           }
+          globalLoader.hide();
         } catch (error) {
-          alert("Error: " + error.message);
+          globalLoader.hide();
+          globalLoader.showMessage("Error: " + error.message, 'error');
         }
       }
 
@@ -270,13 +282,13 @@
                         <div class="action-buttons">
                             <button class="action-btn edit" onclick="editSite(${
                               site.id
-                            })" title="Edit Site">
-                                <ion-icon name="create-outline"></ion-icon>
+                            })" title="Edit">
+                                <ion-icon name="create-outline"style="pointer-events: none;"></ion-icon>
                             </button>
                             <button class="action-btn delete" onclick="deleteSite(${
                               site.id
-                            })" title="Delete Site">
-                                <ion-icon name="trash-outline"></ion-icon>
+                            })" title="Delete">
+                                <ion-icon name="trash-outline"style="pointer-events: none;"></ion-icon>
                             </button>
                         </div>
                     </td>
@@ -287,6 +299,8 @@
       }
 
       async function editSite(id) {
+        globalLoader.show('Loading site data...');
+        
         try {
           const response = await fetch("api/get-sites.php", {
             method: 'POST',
@@ -316,10 +330,14 @@
               if (instructionsField) instructionsField.value = site.Access_Instructions || "";
               
               editingId = id;
+              document.querySelector('button[type="submit"]').textContent = 'Update Site';
+              document.getElementById('siteForm').scrollIntoView({ behavior: 'smooth' });
             }
           }
+          globalLoader.hide();
         } catch (error) {
-          console.error("Error loading site:", error);
+          globalLoader.hide();
+          globalLoader.showMessage('Error loading site data', 'error');
         }
       }
 
@@ -373,14 +391,7 @@
       }
     </script>
 
+    <script src="js/global-loader.js"></script>
     <script src="js/session.js"></script>
-    <script
-      type="module"
-      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"
-    ></script>
-    <script
-      nomodule
-      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"
-    ></script>
   </body>
 </html>

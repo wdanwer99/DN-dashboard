@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global-loader.css">
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <title>Reports - Admin</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <div class="logo-image">
+                <img src="assets/logo2.png" alt="Company Logo">
+            </div>
+        </div>
+        <div class="menu-items">
+            <ul class="navLinks">
+                <li class="navList">
+                    <a href="dashboard.html">
+                        <ion-icon name="home-outline"></ion-icon>
+                        <span class="links">Dashboard</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="delivery-notes.html">
+                        <ion-icon name="folder-outline"></ion-icon>
+                        <span class="links">DN Managment</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="add-trip.html">
+                        <ion-icon name="car-sport-outline"></ion-icon>
+                        <span class="links">Trips Management</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="accounting.html">
+                        <ion-icon name="calculator-outline"></ion-icon>
+                        <span class="links">Finance Management</span>
+                    </a>
+                </li>
+                <li class="navList active">
+                    <a href="reports.html">
+                        <ion-icon name="bar-chart-outline"></ion-icon>
+                        <span class="links">Reports</span>
+                    </a>
+                </li>
+                <li class="nav-divider"></li>
+                <li class="navList">
+                    <a href="add-site.html">
+                        <ion-icon name="location-outline"></ion-icon>
+                        <span class="links">Add Site</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="add-truck.html">
+                        <ion-icon name="car-outline"></ion-icon>
+                        <span class="links">Add Truck</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="add_item.html">
+                        <ion-icon name="cube-outline"></ion-icon>
+                        <span class="links">Add Item</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="bottom-link">
+                <li>
+                    <a href="#" onclick="logout()">
+                        <ion-icon name="log-out-outline"></ion-icon>
+                        <span class="links">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="container">
+            <div class="title">
+                <ion-icon name="bar-chart-outline"></ion-icon>
+                <span class="text">Reports Dashboard</span>
+            </div>
+
+            <!-- Report Type Selection -->
+            <div class="upload-form">
+                <h3>
+                    <ion-icon name="document-text-outline"></ion-icon>
+                    Select Report Type
+                </h3>
+                <select id="reportType" onchange="loadReport()">
+                    <option value="">Select Report</option>
+                    <option value="dn-status">DN Counts </option>
+                    <option value="dn-details">DN Details</option>
+                    <option value="dn-sites">DN Counts per Site</option>
+                    <option value="trips-cars">Trip Counts </option>
+                    <option value="payments">Payment Counts </option>
+                </select>
+            </div>
+
+            <!-- Filters Section -->
+            <div id="filtersSection" class="upload-form hidden">
+                <h3>
+                    <ion-icon name="funnel-outline"></ion-icon>
+                    Filters & Search
+                </h3>
+                <div class="form-grid">
+                    <input type="text" id="searchField" placeholder="Search...">
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                    </select>
+                    <select id="siteFilter">
+                        <option value="">All Sites</option>
+                    </select>
+                    <input type="date" id="dateFrom" placeholder="From Date">
+                    <input type="date" id="dateTo" placeholder="To Date">
+                    <button onclick="applyFilters()">
+                        <ion-icon name="search-outline"></ion-icon>
+                        Apply Filters
+                    </button>
+                    <button onclick="exportToExcel()">
+                        <ion-icon name="download-outline"></ion-icon>
+                        Export to Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Display -->
+            <div id="reportContainer" class="table-container hidden">
+                <div class="table-header">
+                    <ion-icon name="analytics-outline"></ion-icon>
+                    <span id="reportTitle">Report Results</span>
+                </div>
+                <div id="reportContent"></div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
+            window.location.href = 'index.html';
+        }
+
+        let currentReportData = [];
+        let filteredData = [];
+
+        async function loadReport() {
+            const reportType = document.getElementById('reportType').value;
+            if (!reportType) {
+                document.getElementById('filtersSection').classList.add('hidden');
+                document.getElementById('reportContainer').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('filtersSection').classList.remove('hidden');
+            globalLoader.show('Loading report...');
+
+            try {
+                const response = await fetch('api/get-reports.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ report_type: reportType })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentReportData = result.data;
+                    filteredData = [...currentReportData];
+                    displayReport(reportType, filteredData);
+                    loadFilterOptions(reportType);
+                } else {
+                    globalLoader.showMessage('Error loading report: ' + result.error, 'error');
+                }
+            } catch (error) {
+                globalLoader.showMessage('Error: ' + error.message, 'error');
+            }
+            globalLoader.hide();
+        }
+
+        function displayReport(reportType, data) {
+            const container = document.getElementById('reportContent');
+            const titleElement = document.getElementById('reportTitle');
+            
+            let html = '';
+            let title = '';
+
+            switch (reportType) {
+                case 'dn-status':
+                    title = 'DN Counts per Status';
+                    html = generateStatusCountTable(data, ['Status', 'Count']);
+                    break;
+                case 'dn-details':
+                    title = 'DN Details';
+                    html = generateDetailsTable(data);
+                    break;
+                case 'dn-sites':
+                    title = 'DN Counts per Site per Status';
+                    html = generateSiteStatusTable(data);
+                    break;
+                case 'trips-cars':
+                    title = 'Trip Counts per Car per Status';
+                    html = generateTripCarTable(data);
+                    break;
+                case 'payments':
+                    title = 'Payment Counts per Status';
+                    html = generatePaymentsTable(data);
+                    break;
+            }
+
+            titleElement.textContent = title;
+            container.innerHTML = html;
+            document.getElementById('reportContainer').classList.remove('hidden');
+        }
+
+        function generateStatusCountTable(data, headers) {
+            let html = `<table class="delivery-notes-table"><thead><tr><th>Project Name</th><th>Project Code</th><th>Count</th><th>Status</th></tr></thead><tbody>`;
+            
+            data.forEach(row => {
+                html += `<tr><td><strong>${row.Project_Name || 'N/A'}</strong></td><td>${row.Project_Code || 'N/A'}</td><td><strong>${row.count}</strong></td><td><span class="status-badge status-${row.DN_Status ? row.DN_Status.toLowerCase() : 'unknown'}">${row.DN_Status || 'Unknown'}</span></td></tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            return html;
+        }
+
+        function generateDetailsTable(data) {
+            if (data.length === 0) return '<p>No data found</p>';
+            
+            let html = `<table class="delivery-notes-table"><thead><tr><th>DN No</th><th>Project Code</th><th>Project Name</th><th>Customer</th><th>Customer PO</th><th>Product Manager</th><th>Item Count</th><th>DN Status</th></tr></thead><tbody>`;
+            
+            data.forEach(row => {
+                html += `<tr><td><strong>${row.dn_no || 'N/A'}</strong></td><td>${row.Project_Code || 'N/A'}</td><td>${row.Project_Name || 'N/A'}</td><td>${row.Customer || 'N/A'}</td><td>${row.Customer_PO || 'N/A'}</td><td>${row.Product_Manager || 'N/A'}</td><td><strong>${row.item_count || 0}</strong></td><td><span class="status-badge status-${row.DN_Status ? row.DN_Status.toLowerCase() : 'unknown'}">${row.DN_Status || 'Unknown'}</span></td></tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            return html;
+        }
+
+        function generateSiteStatusTable(data) {
+            let html = `<table class="delivery-notes-table"><thead><tr><th>Site Code</th><th>Site Name</th><th>Operator</th><th>Type</th><th>Address</th><th>DN Count</th><th>Status</th></tr></thead><tbody>`;
+            
+            data.forEach(row => {
+                html += `<tr><td><strong>${row.site_Code}</strong></td><td>${row.Site_Name || 'N/A'}</td><td>${row.Tel_Operator || 'N/A'}</td><td>${row.Site_Type || 'N/A'}</td><td title="${row.Address || 'N/A'}">${(row.Address || 'N/A').substring(0, 30)}...</td><td><strong>${row.DN_Counts}</strong></td><td><span class="status-badge status-${row.DN_Status ? row.DN_Status.toLowerCase() : 'unknown'}">${row.DN_Status || 'Unknown'}</span></td></tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            return html;
+        }
+
+        function generateTripCarTable(data) {
+            let html = `<table class="delivery-notes-table"><thead><tr><th>Site Code</th><th>Plate No</th><th>Driver</th><th>Phone</th><th>Trip Count</th><th>Status</th></tr></thead><tbody>`;
+            
+            data.forEach(row => {
+                html += `<tr><td><strong>${row.site_Code}</strong></td><td><strong>${row.Plate_No}</strong></td><td>${row.driver_name || 'N/A'}</td><td>${row.driver_phone || 'N/A'}</td><td><strong>${row.Trip_Counts}</strong></td><td><span class="status-badge status-${row.status ? row.status.toLowerCase().replace(' ', '-') : 'unknown'}">${row.status || 'Unknown'}</span></td></tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            return html;
+        }
+
+        function generatePaymentsTable(data) {
+            let html = `<table class="delivery-notes-table"><thead><tr><th>Assignment ID</th><th>Site Code</th><th>Customer</th><th>Project</th><th>Cost</th><th>Balance</th><th>Status</th><th>Count</th></tr></thead><tbody>`;
+            
+            data.forEach(row => {
+                html += `<tr><td><strong>${row.assignment_id}</strong></td><td>${row.site_Code}</td><td>${row.Customer || 'N/A'}</td><td>${row.Project_Name || 'N/A'}</td><td>${parseFloat(row.cost || 0).toFixed(2)} SDG</td><td>${parseFloat(row.balance || 0).toFixed(2)} SDG</td><td><span class="status-badge status-${row.payment_status ? row.payment_status.toLowerCase() : 'unknown'}">${row.payment_status || 'Unknown'}</span></td><td><strong>${row.row_count}</strong></td></tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            return html;
+        }
+
+        async function loadFilterOptions(reportType) {
+            try {
+                const response = await fetch('api/get-filter-options.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ report_type: reportType })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    populateFilters(result.data);
+                }
+            } catch (error) {
+                console.error('Error loading filter options:', error);
+            }
+        }
+
+        function populateFilters(options) {
+            const statusFilter = document.getElementById('statusFilter');
+            const siteFilter = document.getElementById('siteFilter');
+            
+            statusFilter.innerHTML = '<option value="">All Status</option>';
+            siteFilter.innerHTML = '<option value="">All Sites</option>';
+            
+            if (options.statuses) {
+                options.statuses.forEach(status => {
+                    statusFilter.innerHTML += `<option value="${status}">${status}</option>`;
+                });
+            }
+            
+            if (options.sites) {
+                options.sites.forEach(site => {
+                    siteFilter.innerHTML += `<option value="${site}">${site}</option>`;
+                });
+            }
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchField').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const siteFilter = document.getElementById('siteFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            filteredData = currentReportData.filter(item => {
+                let matches = true;
+
+                if (searchTerm) {
+                    const searchableText = Object.values(item).join(' ').toLowerCase();
+                    matches = matches && searchableText.includes(searchTerm);
+                }
+
+                if (statusFilter && item.status) {
+                    matches = matches && item.status === statusFilter;
+                }
+
+                if (siteFilter && item.site_code) {
+                    matches = matches && item.site_code === siteFilter;
+                }
+
+                if (dateFrom && item.created_at) {
+                    matches = matches && new Date(item.created_at) >= new Date(dateFrom);
+                }
+
+                if (dateTo && item.created_at) {
+                    matches = matches && new Date(item.created_at) <= new Date(dateTo);
+                }
+
+                return matches;
+            });
+
+            const reportType = document.getElementById('reportType').value;
+            displayReport(reportType, filteredData);
+        }
+
+        function exportToExcel() {
+            if (filteredData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            const reportType = document.getElementById('reportType').value;
+            const reportTitle = document.getElementById('reportTitle').textContent;
+            
+            const ws = XLSX.utils.json_to_sheet(filteredData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Report');
+            
+            const fileName = `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+    </script>
+
+    <script src="js/global-loader.js"></script>
+    <script src="js/session.js"></script>
+</body>
+</html>

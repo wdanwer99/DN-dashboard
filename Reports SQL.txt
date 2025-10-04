@@ -1,0 +1,101 @@
+1-DN counts per status
+2-DN details with filter in any DN fields
+3-DN counts per sites per status.
+4-Cont of trips per car per status
+5-Count of payments  per status
+
+
+
+1-   DN counts per status
+SELECT `Project_Name`,`Project_Code`,count(*),`DN_Status` FROM `delivery_notes` group by `Project_Name`,`Project_Code`,`DN_Status`;
+
+2-DN details with filter in any DN fields
+
+SELECT 
+    d.`dn_no`,
+    d.`Project_Code`,
+    d.`Project_Name`,
+    d.`Customer`,
+    d.`Customer_PO`,
+    d.`Product_Manager`,
+    COUNT(*) AS item_count,
+    d.`DN_Status`
+FROM `delivery_notes` d
+JOIN `dn_items` I ON d.dn_no = I.dn_no
+GROUP BY 
+    d.`dn_no`,
+    d.`Customer`,
+    d.`Customer_PO`,
+    d.`Project_Name`,
+    d.`Project_Code`,
+    d.`Product_Manager`,
+    d.`DN_Status`;
+    
+3-DN counts per sites per status. 
+
+SELECT 
+    S.`site_Code`,
+    S.`Site_Name`,
+    S.`Tel_Operator`,
+    S.`Site_Type`,
+    S.`Address`,
+    COUNT(*) AS DN_Counts,
+    d.`DN_Status`
+FROM `site_details` S
+JOIN `delivery_notes` d ON S.site_Code = d.site_Code
+GROUP BY  
+    S.`site_Code`,
+    S.`Site_Name`,
+    S.`Tel_Operator`,
+    S.`Site_Type`,
+    S.`Address`,
+    d.`DN_Status`;
+    
+    
+4-Cont of trips per car per status
+    SELECT 
+    A.`site_Code`,
+    T.`truck_id`,
+    T.`truck_no` As Plate_No,
+    T.`driver_name`,
+    T.`driver_phone`,
+    COUNT(*) AS Trip_Counts,
+    A.`status`
+FROM `truck_assignments` A
+JOIN `trucks_info` T ON T.`truck_id` = A.`truck_id`
+GROUP BY 
+    A.`site_Code`,
+    A.`status`,
+    T.`truck_id`,
+    T.`truck_no`,
+    T.`driver_name`,
+    T.`driver_phone`;
+
+5-Count of payments  per status
+SELECT 
+    COUNT(*) AS row_count,
+    C.assignment_id,
+    A.site_Code,
+    D.`Customer`,
+    D.`Customer_PO`,
+    D.`Project_Name`,
+    D.`Project_Code`,
+    C.cost,
+    C.balance,
+    C.payment_status
+FROM `truck_assignment_accounts` C
+JOIN `truck_assignments` A ON C.assignment_id = A.assignment_id
+JOIN `delivery_notes` D ON A.site_Code = D.site_Code
+GROUP BY 
+    C.assignment_id,
+    C.cost,
+    C.balance,
+    C.payment_status,
+    A.site_Code,
+    D.`Customer`,
+    D.`Customer_PO`,
+    D.`Project_Name`,
+    D.`Project_Code`;
+
+    
+    

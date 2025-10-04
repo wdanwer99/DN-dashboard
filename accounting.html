@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global-loader.css">
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <title>Accounting Dashboard</title>
 </head>
 <body>
     <nav>
         <div class="logo">
             <div class="logo-image">
-                <img src="" alt="">
+                <img src="assets/logo2.png" alt="Company Logo">
             </div>
         </div>
         <div class="menu-items">
@@ -36,7 +39,7 @@
                 <li class="navList active">
                     <a href="accounting.html">
                         <ion-icon name="calculator-outline"></ion-icon>
-                        <span class="links">finance Management</span>
+                        <span class="links">Finance Management</span>
                     </a>
                 </li>
                 <li class="nav-divider"></li>
@@ -203,6 +206,8 @@
         }
 
         async function loadAccounts() {
+            globalLoader.show('Loading accounts...');
+            
             try {
                 const response = await fetch('api/get-accounts.php', {
                     method: 'POST',
@@ -213,10 +218,12 @@
                 if (result.success) {
                     displayAccounts(result.data);
                 } else {
-                    showMessage('Error loading accounts', 'error');
+                    globalLoader.showMessage('Error loading accounts', 'error');
                 }
+                globalLoader.hide();
             } catch (error) {
-                showMessage('Error loading accounts', 'error');
+                globalLoader.hide();
+                globalLoader.showMessage('Error loading accounts', 'error');
             }
         }
 
@@ -313,8 +320,7 @@
         }
     </script>
     
+    <script src="js/global-loader.js"></script>
     <script src="js/session.js"></script>
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>
 </html>

@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="global-loader.css">
     <title>Add Trip - Admin</title>
 </head>
 <body>
     <nav>
         <div class="logo">
             <div class="logo-image">
-                <img src="" alt="">
+                <img src="assets/logo2.png" alt="Company Logo">
             </div>
         </div>
         <div class="menu-items">
@@ -36,7 +37,7 @@
                 <li class="navList">
                     <a href="accounting.html">
                         <ion-icon name="calculator-outline"></ion-icon>
-                        <span class="links">finance Management</span>
+                        <span class="links">Finance Management</span>
                     </a>
                 </li>
                 <li class="nav-divider"></li>
@@ -60,12 +61,6 @@
                 </li>
             </ul>
             <ul class="bottom-link">
-                <!-- <li>
-                    <a href="profile.html">
-                        <ion-icon name="person-circle-outline"></ion-icon>
-                        <span class="links">Profile</span>
-                    </a>
-                </li> -->
                 <li>
                     <a href="#" onclick="logout()">
                         <ion-icon name="log-out-outline"></ion-icon>
@@ -136,8 +131,6 @@
                 </table>
             </div>
 
-            <div id="message" class="upload-status hidden"></div>
-            
             <!-- Trips Table -->
             <div class="table-container" style="display: block;">
                 <div class="table-header">
@@ -169,62 +162,27 @@
         </div>
     </section>
 
+    <script src="js/global-loader.js"></script>
     <script>
         if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
             window.location.href = 'index.html';
         }
 
+        let allDeliveryNotes = [];
+        let selectedDeliveryNotes = [];
+
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded, initializing...');
             loadSites();
             loadTrucks();
             loadTrips();
             
-            // Add event listeners
-            const siteSelect = document.getElementById('siteSelect');
-            const tripForm = document.getElementById('tripForm');
-            
-            if (siteSelect) {
-                siteSelect.addEventListener('change', loadDeliveryNotes);
-            }
-            
-            if (tripForm) {
-                tripForm.addEventListener('submit', handleSubmit);
-                console.log('Form event listener added');
-            }
-            
-            // Add click listener to button as backup
-            const addTripBtn = document.getElementById('addTripBtn');
-            if (addTripBtn) {
-                addTripBtn.addEventListener('click', function(e) {
-                    console.log('Button clicked');
-                    if (e.target.type === 'submit') {
-                        // Let form handle it
-                        return;
-                    }
-                    e.preventDefault();
-                    handleSubmit(e);
-                });
-            }
-            
-            // Toggle delivery notes table
+            document.getElementById('siteSelect').addEventListener('change', loadDeliveryNotes);
+            document.getElementById('tripForm').addEventListener('submit', handleSubmit);
             document.getElementById('dnSelectBtn').addEventListener('click', function() {
                 const table = document.getElementById('dnTable');
                 table.style.display = table.style.display === 'none' ? 'block' : 'none';
             });
-            
-            // Add selected delivery notes
             document.getElementById('addSelectedDNs').addEventListener('click', addSelectedDeliveryNotes);
-            
-            // Close table when clicking outside
-            document.addEventListener('click', function(e) {
-                const dnTable = document.getElementById('dnTable');
-                const dnBtn = document.getElementById('dnSelectBtn');
-                const addBtn = document.getElementById('addSelectedDNs');
-                if (!dnTable.contains(e.target) && !dnBtn.contains(e.target) && !addBtn.contains(e.target)) {
-                    dnTable.style.display = 'none';
-                }
-            });
         });
 
         async function loadSites() {
@@ -233,8 +191,6 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                
-                if (!response.ok) return;
                 const result = await response.json();
                 
                 if (result.success) {
@@ -247,17 +203,14 @@
                     });
                 }
             } catch (error) {
-                // Silently handle error when switching pages
+                console.error('Error loading sites:', error);
             }
         }
 
         async function loadDeliveryNotes() {
             const siteCode = document.getElementById('siteSelect').value;
             const dnBtn = document.getElementById('dnSelectBtn');
-            const dnTableBody = document.getElementById('dnTableBody');
             
-            // Reset delivery note selection
-            dnTableBody.innerHTML = '';
             document.getElementById('selectedDNs').value = '';
             selectedDeliveryNotes = [];
             dnBtn.innerHTML = 'Select Delivery Notes';
@@ -280,44 +233,18 @@
                     dnBtn.disabled = false;
                     allDeliveryNotes = result.data;
                     displayDeliveryNotes(allDeliveryNotes);
-                    document.getElementById('dnSearch').value = '';
                 }
             } catch (error) {
-                showMessage('Error loading delivery notes', 'error');
+                globalLoader.showMessage('Error loading delivery notes', 'error');
             }
         }
-        
-        let allDeliveryNotes = [];
-        
-        function selectDeliveryNote(dnNo, customer, project) {
-            document.getElementById('selectedDN').value = dnNo;
-            document.getElementById('dnSelectBtn').innerHTML = `
-                <div style="text-align: left;">
-                    <strong>${dnNo}</strong><br>
-                    <small style="color: #666;">${customer} - ${project}</small>
-                </div>
-            `;
-            document.getElementById('dnTable').style.display = 'none';
-        }
-        
-        function searchDeliveryNotes() {
-            const searchTerm = document.getElementById('dnSearch').value.toLowerCase();
-            const filteredNotes = allDeliveryNotes.filter(note => 
-                note.dn_no.toLowerCase().includes(searchTerm) ||
-                (note.Customer && note.Customer.toLowerCase().includes(searchTerm)) ||
-                (note.Project_Name && note.Project_Name.toLowerCase().includes(searchTerm))
-            );
-            displayDeliveryNotes(filteredNotes);
-        }
-        
-        let selectedDeliveryNotes = [];
-        
+
         function toggleSelectAll() {
             const selectAll = document.getElementById('selectAllDN');
             const checkboxes = document.querySelectorAll('input[name="dnCheckbox"]');
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
         }
-        
+
         function addSelectedDeliveryNotes() {
             const checkboxes = document.querySelectorAll('input[name="dnCheckbox"]:checked');
             selectedDeliveryNotes = [];
@@ -341,7 +268,7 @@
             document.getElementById('dnSelectBtn').innerHTML = btnText;
             document.getElementById('dnTable').style.display = 'none';
         }
-        
+
         function displayDeliveryNotes(notes) {
             const dnTableBody = document.getElementById('dnTableBody');
             
@@ -368,14 +295,22 @@
             `).join('');
         }
 
+        function searchDeliveryNotes() {
+            const searchTerm = document.getElementById('dnSearch').value.toLowerCase();
+            const filteredNotes = allDeliveryNotes.filter(note => 
+                note.dn_no.toLowerCase().includes(searchTerm) ||
+                (note.Customer && note.Customer.toLowerCase().includes(searchTerm)) ||
+                (note.Project_Name && note.Project_Name.toLowerCase().includes(searchTerm))
+            );
+            displayDeliveryNotes(filteredNotes);
+        }
+
         async function loadTrucks() {
             try {
                 const response = await fetch('api/get-trucks.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                
-                if (!response.ok) return;
                 const result = await response.json();
                 
                 if (result.success) {
@@ -388,24 +323,24 @@
                     });
                 }
             } catch (error) {
-                // Silently handle error when switching pages
+                console.error('Error loading trucks:', error);
             }
         }
 
         async function handleSubmit(e) {
             e.preventDefault();
-            console.log('Form submitted');
             
-            // Validate required fields
             const siteCode = document.getElementById('siteSelect').value;
             const dnNos = document.getElementById('selectedDNs').value;
             const truckId = document.getElementById('truckSelect').value;
             const status = document.getElementById('statusSelect').value;
             
             if (!siteCode || !dnNos || !truckId || !status) {
-                showMessage('Please fill all required fields', 'error');
+                globalLoader.showMessage('Please fill all required fields', 'error');
                 return;
             }
+            
+            globalLoader.show('Adding trips...');
             
             const dnArray = dnNos.split(',');
             const promises = dnArray.map(dnNo => {
@@ -429,13 +364,14 @@
                 const responses = await Promise.all(promises);
                 const results = await Promise.all(responses.map(r => r.json()));
                 
+                globalLoader.hide();
+                
                 const successful = results.filter(r => r.success);
                 const failed = results.filter(r => !r.success);
                 
                 if (successful.length > 0) {
-                    showMessage(`${successful.length} trip(s) added successfully!`, 'success');
+                    globalLoader.showMessage(`${successful.length} trip(s) added successfully!`, 'success');
                     
-                    // Reset form
                     document.getElementById('tripForm').reset();
                     document.getElementById('dnSelectBtn').disabled = true;
                     document.getElementById('selectedDNs').value = '';
@@ -443,36 +379,35 @@
                     document.getElementById('dnSelectBtn').innerHTML = 'Select Delivery Notes';
                     document.getElementById('dnTable').style.display = 'none';
                     
-                    // Refresh trips table
                     await loadTrips();
                 }
                 
                 if (failed.length > 0) {
-                    showMessage(`${failed.length} trip(s) failed to add`, 'error');
+                    globalLoader.showMessage(`${failed.length} trip(s) failed to add`, 'error');
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
-                showMessage('Error adding trips: ' + error.message, 'error');
+                globalLoader.hide();
+                globalLoader.showMessage('Error adding trips: ' + error.message, 'error');
             }
         }
 
         async function loadTrips() {
+            globalLoader.show('Loading trips...');
+            
             try {
                 const response = await fetch('api/get-trips.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                
-                if (!response.ok) return;
                 const result = await response.json();
                 
                 if (result.success) {
                     displayTrips(result.data);
-                } else {
-                    showMessage('Error loading trips', 'error');
                 }
+                globalLoader.hide();
             } catch (error) {
-                // Silently handle error when switching pages
+                globalLoader.hide();
+                globalLoader.showMessage('Error loading trips', 'error');
             }
         }
 
@@ -502,14 +437,6 @@
                     <td><span class="status-badge status-${trip.status.toLowerCase().replace(' ', '-')}">${trip.status}</span></td>
                 </tr>
             `).join('');
-        }
-
-        function showMessage(message, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = message;
-            messageDiv.className = `upload-status ${type}`;
-            messageDiv.classList.remove('hidden');
-            setTimeout(() => messageDiv.classList.add('hidden'), 3000);
         }
     </script>
     

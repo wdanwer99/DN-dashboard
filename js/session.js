@@ -3,8 +3,20 @@ const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 function initSession() {
     if (!sessionStorage.getItem('userRole')) {
-        window.location.href = 'index.html';
+        window.location.replace('index.html');
         return;
+    }
+    
+    // Prevent back navigation to login page after successful login
+    if (window.location.pathname !== '/index.html') {
+        history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', function() {
+            if (!sessionStorage.getItem('userRole')) {
+                window.location.replace('index.html');
+            } else {
+                history.pushState(null, null, window.location.href);
+            }
+        });
     }
     
     updateLastActivity();
@@ -36,9 +48,21 @@ function addActivityListeners() {
 }
 
 function logout() {
+    // Clear all session data
     sessionStorage.clear();
-    alert('Session expired. Please login again.');
-    window.location.href = 'index.html';
+    localStorage.clear();
+    
+    // Clear browser history to prevent back navigation
+    history.pushState(null, null, 'index.html');
+    
+    // Redirect to login page
+    window.location.replace('index.html');
+    
+    // Prevent back navigation after logout
+    window.addEventListener('popstate', function() {
+        history.pushState(null, null, 'index.html');
+        window.location.replace('index.html');
+    });
 }
 
 // Initialize session on page load

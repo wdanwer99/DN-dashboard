@@ -79,15 +79,38 @@
                 
                 sessionStorage.setItem('userRole', role);
                 sessionStorage.setItem('username', username);
+                sessionStorage.setItem('lastActivity', Date.now().toString());
                 
+                // Clear login form
+                document.getElementById('loginForm').reset();
+                
+                // Redirect and prevent back navigation
                 if (role === 'admin') {
-                    window.location.href = 'dashboard.html';
+                    window.location.replace('dashboard.html');
                 } else {
-                    window.location.href = 'accounting.html';
+                    window.location.replace('accounting.html');
                 }
             } else {
                 errorMessage.textContent = 'Invalid credentials';
                 errorMessage.style.display = 'block';
+            }
+        });
+        
+        // Prevent back navigation if user is already logged in
+        if (sessionStorage.getItem('userRole')) {
+            const role = sessionStorage.getItem('userRole');
+            if (role === 'admin') {
+                window.location.replace('dashboard.html');
+            } else {
+                window.location.replace('accounting.html');
+            }
+        }
+        
+        // Clear any existing session data on login page load
+        window.addEventListener('load', function() {
+            if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+                sessionStorage.clear();
+                localStorage.clear();
             }
         });
     </script>

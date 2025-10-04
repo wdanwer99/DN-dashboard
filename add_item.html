@@ -5,13 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="global-loader.css" />
     <title>Add Item - Admin</title>
   </head>
   <body>
     <nav>
       <div class="logo">
         <div class="logo-image">
-          <img src="" alt="" />
+          <img src="assets/logo2.png" alt="Company Logo" />
         </div>
       </div>
       <div class="menu-items">
@@ -37,7 +38,7 @@
           <li class="navList">
             <a href="accounting.html">
               <ion-icon name="calculator-outline"></ion-icon>
-              <span class="links">finance Management</span>
+              <span class="links">Finance Management</span>
             </a>
           </li>
           <li class="nav-divider"></li>
@@ -118,8 +119,8 @@
                 <tr>
                   <th>Item Code</th>
                   <th>Description</th>
-                  <th>Actions</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="itemsTableBody"></tbody>
@@ -179,6 +180,8 @@
         });
 
       async function loadItems() {
+        globalLoader.show('Loading items...');
+        
         try {
           const response = await fetch("api/get-items.php");
           const result = await response.json();
@@ -187,10 +190,12 @@
             displayItems(result.data);
             document.getElementById("itemsTable").classList.remove("hidden");
           } else {
-            alert("Error loading items: " + result.error);
+            globalLoader.showMessage("Error loading items: " + result.error, 'error');
           }
+          globalLoader.hide();
         } catch (error) {
-          alert("Error: " + error.message);
+          globalLoader.hide();
+          globalLoader.showMessage("Error: " + error.message, 'error');
         }
       }
 
@@ -219,25 +224,25 @@
               50
             )}</td>
               <td>
-                <div class="action-buttons">
-                  <button class="action-btn edit" onclick="editItem(${
-                    item.id
-                  })" title="Edit Item">
-                    <ion-icon name="create-outline"></ion-icon>
-                  </button>
-                  <button class="action-btn delete" onclick="deleteItem(${
-                    item.id
-                  })" title="Delete Item">
-                    <ion-icon name="trash-outline"></ion-icon>
-                  </button>
-                </div>
-              </td>
-              <td>
                 <span class="status-badge status-${
                   item.item_Status === "Active" ? "active" : "inactive"
                 }">
                   ${item.item_Status || "N/A"}
                 </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="action-btn edit" onclick="editItem(${
+                    item.id
+                  })" title="Edit Item">
+                    <ion-icon name="create-outline"style="pointer-events: none;"></ion-icon>
+                  </button>
+                  <button class="action-btn delete" onclick="deleteItem(${
+                    item.id
+                  })" title="Delete Item">
+                    <ion-icon name="trash-outline"style="pointer-events: none;"></ion-icon>
+                  </button>
+                </div>
               </td>
             </tr>
           `
@@ -301,6 +306,7 @@
       }
     </script>
 
+    <script src="js/global-loader.js"></script>
     <script src="js/session.js"></script>
     <script
       type="module"
