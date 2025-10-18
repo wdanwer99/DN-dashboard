@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="global-loader.css" />
+    <title>Project & Batches - Admin</title>
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <div class="logo-image">
+          <img src="assets/logo2.png" alt="Company Logo" />
+        </div>
+      </div>
+      <div class="menu-items">
+        <ul class="navLinks">
+          <li class="navList">
+            <a href="dashboard.html">
+              <ion-icon name="home-outline"></ion-icon>
+              <span class="links">Dashboard</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="delivery-notes.html">
+              <ion-icon name="folder-outline"></ion-icon>
+              <span class="links">DN Managment</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="add-trip.html">
+              <ion-icon name="car-sport-outline"></ion-icon>
+              <span class="links">Trips Management</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="accounting.html">
+              <ion-icon name="calculator-outline"></ion-icon>
+              <span class="links">Finance Management</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="add-site.html">
+              <ion-icon name="location-outline"></ion-icon>
+              <span class="links">Add Site</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="add-truck.html">
+              <ion-icon name="car-outline"></ion-icon>
+              <span class="links">Add Truck</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="add_item.html">
+              <ion-icon name="cube-outline"></ion-icon>
+              <span class="links">Add Item</span>
+            </a>
+          </li>
+          <li class="navList active">
+            <a href="add-project.html">
+              <ion-icon name="briefcase-outline"></ion-icon>
+              <span class="links">Project & Batches</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="employee-info.html">
+              <ion-icon name="people-outline"></ion-icon>
+              <span class="links">Employee Info</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="reports.html">
+              <ion-icon name="bar-chart-outline"></ion-icon>
+              <span class="links">Reports</span>
+            </a>
+          </li>
+        </ul>
+        <ul class="bottom-link">
+          <li>
+            <a href="#" onclick="logout()">
+              <ion-icon name="log-out-outline"></ion-icon>
+              <span class="links">Logout</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <section class="dashboard">
+      <div class="container">
+        <div class="data-table">
+          <div class="title">
+            <ion-icon name="briefcase-outline"></ion-icon>
+            <span class="text">Add New Project & Batch</span>
+          </div>
+          <form id="projectForm" class="form-grid">
+            <input
+              type="text"
+              name="Project_code_User"
+              placeholder="Project Code"
+              required
+            />
+            <input
+              type="text"
+              name="Batch_no_user"
+              placeholder="Batch Number"
+              required
+            />
+            <select name="project_status" required>
+              <option value="">Select Status</option>
+              <option value="active" selected>Active</option>
+              <option value="not active">Not Active</option>
+            </select>
+            <button type="submit">Add Project</button>
+          </form>
+        </div>
+
+
+
+        <div class="data-table">
+          <div class="title">
+            <ion-icon name="search-outline"></ion-icon>
+            <span class="text">Search & Filter</span>
+          </div>
+          <div class="form-grid">
+            <input
+              type="text"
+              id="searchProject"
+              placeholder="Search by Project Code"
+            />
+            <input
+              type="text"
+              id="searchBatch"
+              placeholder="Search by Batch Number"
+            />
+            <select id="filterStatus">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="not active">Not Active</option>
+            </select>
+            <button type="button" onclick="clearFilters()">Clear Filters</button>
+          </div>
+        </div>
+
+        <div class="table-container" id="projectsTable" style="display: block;">
+          <div class="table-header">
+            <ion-icon name="list-outline"></ion-icon>
+            All Projects & Batches Database
+          </div>
+          <div class="table-scroll">
+            <table class="delivery-notes-table">
+              <thead>
+                <tr>
+                  <th>Project Code</th>
+                  <th>Batch Numbers</th>
+                  <th>Status</th>
+                  <th>Created At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="projectsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      let editingId = null;
+
+      // Check authentication
+      if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
+        window.location.href = 'index.html';
+      }
+
+      // Auto-load projects on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        loadProjects();
+        setupSearchFilters();
+      });
+
+      function manageBatches(projectCode) {
+        window.location.href = `manage-batches.html?project=${encodeURIComponent(projectCode)}`;
+      }
+
+      document
+        .getElementById("projectForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+
+          try {
+            const response = await fetch("api/add-project.php", {
+              method: "POST",
+              body: formData,
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert("Project added successfully!");
+              this.reset();
+              loadProjects();
+              loadExistingProjects();
+            } else {
+              alert("Error: " + result.error);
+            }
+          } catch (error) {
+            alert("Error: " + error.message);
+          }
+        });
+
+      async function loadProjects() {
+        globalLoader.show('Loading projects...');
+        
+        try {
+          const response = await fetch("api/get-projects.php");
+          const result = await response.json();
+
+          if (result.success) {
+            displayProjects(result.data);
+            document.getElementById("projectsTable").classList.remove("hidden");
+          } else {
+            globalLoader.showMessage("Error loading projects: " + result.error, 'error');
+          }
+          globalLoader.hide();
+        } catch (error) {
+          globalLoader.hide();
+          globalLoader.showMessage("Error: " + error.message, 'error');
+        }
+      }
+
+      function generateBatchButtons(projectCode, batches) {
+        if (!batches || batches === 'N/A') return 'N/A';
+        
+        return batches.replace(/,\s*/g, '<br>');
+      }
+
+      function displayProjects(projects) {
+        const tbody = document.getElementById("projectsTableBody");
+
+        if (projects.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="empty-state">
+                <ion-icon name="briefcase-outline" class="empty-icon"></ion-icon>
+                <br>No projects found
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = projects
+          .map(
+            (project) => `
+            <tr>
+              <td><strong>${project.Project_code_User || "N/A"}</strong></td>
+              <td>${generateBatchButtons(project.Project_code_User, project.batches)}</td>
+              <td>
+                <span class="status-badge status-${
+                  project.project_status === "active" ? "active" : "inactive"
+                }">
+                  ${project.project_status || "N/A"}
+                </span>
+              </td>
+              <td>${formatDate(project.created_at)}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="action-btn edit" onclick="editProject('${project.Project_code_User}')" title="Edit Project">
+                    <ion-icon name="create-outline" style="pointer-events: none;"></ion-icon>
+                  </button>
+                  <button class="action-btn" onclick="manageBatches('${project.Project_code_User}')" title="Manage Batches" style="background: #28a745;">
+                    <ion-icon name="add-circle-outline" style="pointer-events: none;"></ion-icon>
+                  </button>
+                  <button class="action-btn delete" onclick="deleteProject('${project.Project_code_User}')" title="Delete Project">
+                    <ion-icon name="trash-outline" style="pointer-events: none;"></ion-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `
+          )
+          .join("");
+      }
+
+
+
+      async function editProject(projectCode) {
+        const newProjectCode = prompt(`Enter new project code (current: ${projectCode}):`, projectCode);
+        if (!newProjectCode || newProjectCode === projectCode) return;
+
+        try {
+          const formData = new FormData();
+          formData.append('old_project_code', projectCode);
+          formData.append('new_project_code', newProjectCode);
+
+          const response = await fetch('api/update-project.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert('Project code updated successfully!');
+            loadProjects();
+            loadExistingProjects();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      }
+
+      async function editSingleBatch(projectCode, currentBatch) {
+        const newBatch = prompt(`Edit batch number (current: ${currentBatch}):`, currentBatch);
+        if (!newBatch || newBatch === currentBatch) return;
+
+        try {
+          const formData = new FormData();
+          formData.append('project_code', projectCode);
+          formData.append('old_batch', currentBatch);
+          formData.append('new_batch', newBatch);
+
+          const response = await fetch('api/update-single-batch.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert('Batch updated successfully!');
+            loadProjects();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      }
+
+      async function deleteSingleBatch(projectCode, batchNumber) {
+        if (!confirm(`Delete batch '${batchNumber}' from project '${projectCode}'?`)) return;
+
+        try {
+          const formData = new FormData();
+          formData.append('project_code', projectCode);
+          formData.append('batch_number', batchNumber);
+
+          const response = await fetch('api/delete-single-batch.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert('Batch deleted successfully!');
+            loadProjects();
+            loadExistingProjects();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      }
+
+      async function deleteProject(projectCode) {
+        if (!confirm(`Are you sure you want to delete project '${projectCode}' and all its batches?`)) return;
+
+        try {
+          const formData = new FormData();
+          formData.append("project_code", projectCode);
+
+          const response = await fetch("api/delete-project.php", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert("Project deleted successfully!");
+            loadProjects();
+            loadExistingProjects();
+          } else {
+            alert("Error: " + result.error);
+          }
+        } catch (error) {
+          alert("Error: " + error.message);
+        }
+      }
+
+      function setupSearchFilters() {
+        const searchProject = document.getElementById('searchProject');
+        const searchBatch = document.getElementById('searchBatch');
+        const filterStatus = document.getElementById('filterStatus');
+
+        [searchProject, searchBatch, filterStatus].forEach(element => {
+          element.addEventListener('input', filterProjects);
+        });
+      }
+
+      function filterProjects() {
+        const searchProject = document.getElementById('searchProject').value.toLowerCase();
+        const searchBatch = document.getElementById('searchBatch').value.toLowerCase();
+        const filterStatus = document.getElementById('filterStatus').value;
+
+        const rows = document.querySelectorAll('#projectsTableBody tr');
+        
+        rows.forEach(row => {
+          if (row.querySelector('.empty-state')) return;
+          
+          const projectCode = row.cells[0].textContent.toLowerCase();
+          const batchNo = row.cells[1].textContent.toLowerCase();
+          const status = row.cells[2].textContent.toLowerCase().trim();
+
+          const matchesProject = projectCode.includes(searchProject);
+          const matchesBatch = batchNo.includes(searchBatch);
+          const matchesStatus = !filterStatus || status.includes(filterStatus);
+
+          row.style.display = matchesProject && matchesBatch && matchesStatus ? '' : 'none';
+        });
+      }
+
+      function clearFilters() {
+        document.getElementById('searchProject').value = '';
+        document.getElementById('searchBatch').value = '';
+        document.getElementById('filterStatus').value = '';
+        filterProjects();
+      }
+
+      function formatDate(dateString) {
+        if (!dateString) return "N/A";
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+      }
+
+      async function loadExistingProjects() {
+        try {
+          const response = await fetch("api/get-projects.php");
+          const result = await response.json();
+
+          if (result.success) {
+            const select = document.getElementById('existingProjectSelect');
+            const uniqueProjects = [...new Map(result.data.map(p => [p.Project_code_User, p])).values()];
+            
+            select.innerHTML = '<option value="">Select Existing Project</option>';
+            uniqueProjects.forEach(project => {
+              const option = document.createElement('option');
+              option.value = project.Project_code_User;
+              option.textContent = project.Project_code_User;
+              select.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading existing projects:', error);
+        }
+      }
+
+      async function addBatchToProject() {
+        const projectCode = document.getElementById('existingProjectSelect').value;
+        const batchNumber = document.getElementById('newBatchNumber').value.trim();
+
+        if (!projectCode) {
+          alert('Please select a project');
+          return;
+        }
+
+        if (!batchNumber) {
+          alert('Please enter a batch number');
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('Project_code_User', projectCode);
+          formData.append('Batch_no_user', batchNumber);
+          formData.append('project_status', 'active');
+
+          const response = await fetch('api/add-project.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert('Batch added to project successfully!');
+            document.getElementById('existingProjectSelect').value = '';
+            document.getElementById('newBatchNumber').value = '';
+            loadProjects();
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      }
+    </script>
+
+    <script src="js/global-loader.js"></script>
+    <script src="js/session.js"></script>
+    <script
+      type="module"
+      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"
+    ></script>
+  </body>
+</html>

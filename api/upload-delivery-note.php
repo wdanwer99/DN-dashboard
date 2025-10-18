@@ -45,8 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Description_DN, Including_dangerous_goods, pickup_address, Site_Address,
             dn_no, mr_no, receiver_name, receiver_tel, Receiver_Company_Name,
             request_arrived_date, request_shipment_date, logistics_specialist,
-            logistics_specialist_Tel, DN_Status, Company_code
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Created', ?)");
+            logistics_specialist_Tel, Project_code_User, Batch_no_user, Receive_Rep,
+            Delivery_Rep, Collect_Rep, DN_Status, Company_code
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         
         // Helper function to handle empty strings as null
         $getValue = function($key) use ($data) {
@@ -86,10 +87,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $getValue('request_shipment_date'),
             $getValue('logistics_specialist'),
             $getValue('logistics_specialist_Tel'),
-            // $getValue('received_location'),
-            // $getValue('received_Auto_location'),
-            // $getValue('Collected_location'),
-            // $getValue('Collected_Auto_location'),
+            $getValue('Project_code_User'),
+            $getValue('Batch_no_user'),
+            $getValue('Receive_Rep'),
+            $getValue('Delivery_Rep'),
+            $getValue('Collect_Rep'),
+            'Created',
             $getValue('Company_code') ?: '1000'
         ];
         

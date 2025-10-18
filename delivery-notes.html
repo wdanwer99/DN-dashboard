@@ -176,6 +176,18 @@
               <span class="links">Add Item</span>
             </a>
           </li>
+          <li class="navList">
+            <a href="add-project.html">
+              <ion-icon name="briefcase-outline"></ion-icon>
+              <span class="links">Project & Batches</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="employee-info.html">
+              <ion-icon name="people-outline"></ion-icon>
+              <span class="links">Employee Info</span>
+            </a>
+          </li>
           <li class="nav-divider"></li>
           <li class="navList">
             <a href="reports.html">
@@ -216,6 +228,10 @@
                 <ion-icon name="cloud-upload-outline"></ion-icon>
                 Upload Excel Sheet
               </button>
+              <!-- <button class="upload-btn secondary" onclick="updateDatabaseColumns()" style="display: none;" id="updateDbBtn">
+                <ion-icon name="construct-outline"></ion-icon>
+                Update DB Columns
+              </button> -->
               <!-- <button class="upload-btn secondary" onclick="toggleUploadForm()">
                 <ion-icon name="add-outline"></ion-icon>
                 Add Delivery Note
@@ -254,15 +270,32 @@
               </div>
             </div>
 
-            <!-- Site Selection for Excel Upload -->
+            <!-- Project, Site and Representatives Selection -->
             <div class="upload-form">
               <h3>
-                <ion-icon name="location-outline"></ion-icon>
-                Select Site to add Delivery Notes
+                <ion-icon name="briefcase-outline"></ion-icon>
+                Select Project, Site and Representatives
               </h3>
-              <select id="excelSiteSelect" required onchange="loadDeliveryNotesBySite()">
-                <option value="">Select Site First</option>
-              </select>
+              <div class="form-grid">
+                <select id="projectSelect" required onchange="onProjectChange()">
+                  <option value="">Select Project First</option>
+                </select>
+                <select id="batchSelect" disabled>
+                  <option value="">Select Batch Number</option>
+                </select>
+                <select id="excelSiteSelect" required onchange="loadDeliveryNotesBySite()" disabled>
+                  <option value="">Select Site</option>
+                </select>
+                <select id="receiveRep">
+                  <option value="">Select Receive Representative</option>
+                </select>
+                <select id="deliveryRep">
+                  <option value="">Select Delivery Representative</option>
+                </select>
+                <select id="collectRep" style="display: none;">
+                  <option value="">Select Collect Representative</option>
+                </select>
+              </div>
             </div>
 
             <!-- Drag and Drop Area -->
@@ -400,14 +433,15 @@
               <table class="delivery-notes-table">
               <thead>
                 <tr>
-                  <th class="col-dn">DN No</th>
-                  <th class="col-site">Site</th>
                   <th class="col-project">Project</th>
+                  <th class="col-batch">Batch No</th>
+                  <th class="col-site">Site</th>
                   <th class="col-manager">Manager</th>
                   <th class="col-warehouse">Warehouse</th>
+                  <th class="col-receive-rep">Receive Rep</th>
+                  <th class="col-delivery-rep">Delivery Rep</th>
                   <th class="col-date">Date</th>
                   <th class="col-status">Status</th>
-                  <th class="col-locations">Locations</th>
                   <th class="col-actions">Actions</th>
                 </tr>
               </thead>
@@ -471,8 +505,32 @@
       document.addEventListener("DOMContentLoaded", function () {
         initializeEventListeners();
         loadSites();
+        loadProjects();
+        loadEmployees();
         loadAllDeliveryNotes();
+        // Show update button for admin (temporary)
+        if (sessionStorage.getItem('userRole') === 'admin') {
+          document.getElementById('updateDbBtn').style.display = 'inline-flex';
+        }
       });
+      
+      async function updateDatabaseColumns() {
+        if (!confirm('This will update the database structure. Continue?')) return;
+        
+        try {
+          const response = await fetch('api/add-project-columns.php');
+          const result = await response.json();
+          
+          if (result.success) {
+            alert('Database columns updated successfully!');
+            document.getElementById('updateDbBtn').style.display = 'none';
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      }
 
       async function loadAllDeliveryNotes() {
         globalLoader.show('Loading delivery notes...');
@@ -704,7 +762,7 @@
             // Load sites for Excel upload dropdown
             const excelSiteSelect = document.getElementById('excelSiteSelect');
             if (excelSiteSelect) {
-              excelSiteSelect.innerHTML = '<option value="">Select Site First</option>';
+              excelSiteSelect.innerHTML = '<option value="">Select Site</option>';
               result.data.forEach(site => {
                 const option = document.createElement('option');
                 option.value = site.site_Code;
@@ -719,11 +777,168 @@
         }
       }
 
+      async function loadProjects() {
+        try {
+          const response = await fetch('api/get-projects.php');
+          const result = await response.json();
+          
+          if (result.success) {
+            const projectSelect = document.getElementById('projectSelect');
+            if (projectSelect) {
+              projectSelect.innerHTML = '<option value="">Select Project First</option>';
+              result.data.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.Project_code_User;
+                option.dataset.projectCode = project.Project_code_User;
+                option.dataset.batchNo = project.Batch_no_user;
+                projectSelect.appendChild(option);
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error loading projects:', error);
+        }
+      }
+      
+      async function loadEmployees() {
+        try {
+          const response = await fetch('api/get-employees.php');
+          const result = await response.json();
+          
+          if (result.success) {
+            const employees = result.data.filter(emp => emp.status === 'Active');
+            
+            ['receiveRep', 'deliveryRep', 'collectRep'].forEach(selectId => {
+              const select = document.getElementById(selectId);
+              if (select) {
+                const placeholder = selectId === 'receiveRep' ? 'Receive Representative' : 
+                                  selectId === 'deliveryRep' ? 'Delivery Representative' : 'Collect Representative';
+                select.innerHTML = `<option value="">Select ${placeholder}</option>`;
+                employees.forEach(emp => {
+                  const option = document.createElement('option');
+                  option.value = emp.employee_id;
+                  option.textContent = `${emp.first_name} ${emp.last_name}`;
+                  select.appendChild(option);
+                });
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error loading employees:', error);
+        }
+      }
+      
+      async function onProjectChange() {
+        const projectSelect = document.getElementById('projectSelect');
+        const siteSelect = document.getElementById('excelSiteSelect');
+        const batchSelect = document.getElementById('batchSelect');
+        
+        if (projectSelect.value) {
+          const selectedOption = projectSelect.options[projectSelect.selectedIndex];
+          const projectCode = selectedOption.dataset.projectCode;
+          
+          // Load all batches for selected project
+          await loadBatchesForProject(projectCode);
+          
+          batchSelect.disabled = false;
+          siteSelect.disabled = true;
+          
+          window.selectedProjectData = {
+            projectCode: projectCode
+          };
+        } else {
+          batchSelect.innerHTML = '<option value="">Select Batch Number</option>';
+          batchSelect.disabled = true;
+          siteSelect.disabled = true;
+          siteSelect.value = '';
+          window.selectedProjectData = null;
+        }
+      }
+      
+      async function loadBatchesForProject(projectCode) {
+        try {
+          const formData = new FormData();
+          formData.append('project_code', projectCode);
+          
+          const response = await fetch('api/get-individual-batches.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            const batchSelect = document.getElementById('batchSelect');
+            batchSelect.innerHTML = '<option value="">Select Batch Number</option>';
+            
+            result.data.forEach(batch => {
+              const option = document.createElement('option');
+              option.value = batch.Batch_no_user;
+              option.textContent = batch.Batch_no_user;
+              batchSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading batches:', error);
+        }
+      }
+      
+      async function loadSitesForBatch() {
+        const projectSelect = document.getElementById('projectSelect');
+        const batchSelect = document.getElementById('batchSelect');
+        const siteSelect = document.getElementById('excelSiteSelect');
+        
+        const projectCode = projectSelect.options[projectSelect.selectedIndex].dataset.projectCode;
+        const batchNumber = batchSelect.value;
+        
+        if (!projectCode || !batchNumber) return;
+        
+        try {
+          const formData = new FormData();
+          formData.append('project_code', projectCode);
+          formData.append('batch_number', batchNumber);
+          
+          const response = await fetch('api/get-sites-by-batch.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            siteSelect.innerHTML = '<option value="">Select Site</option>';
+            result.data.forEach(site => {
+              const option = document.createElement('option');
+              option.value = site.site_Code;
+              option.textContent = `${site.site_Code} - ${site.Site_Name}`;
+              option.dataset.address = site.Address || '';
+              siteSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading sites for batch:', error);
+        }
+      }
+
       document.addEventListener('change', function(e) {
         if (e.target.id === 'siteSelect') {
           const selectedOption = e.target.options[e.target.selectedIndex];
           const siteAddress = document.getElementById('siteAddress');
           siteAddress.value = selectedOption.dataset.address || '';
+        }
+        
+        if (e.target.id === 'batchSelect') {
+          const siteSelect = document.getElementById('excelSiteSelect');
+          
+          if (e.target.value) {
+            loadSitesForBatch();
+            siteSelect.disabled = false;
+          } else {
+            siteSelect.innerHTML = '<option value="">Select Site</option>';
+            siteSelect.disabled = true;
+            siteSelect.value = '';
+          }
         }
         
         if (e.target.id === 'excelSiteSelect') {
@@ -742,6 +957,8 @@
             fileInput.disabled = true;
           }
         }
+        
+
       });
 
       function initializeEventListeners() {
@@ -761,10 +978,24 @@
       // File handling functions
       function triggerFileUpload() {
         const excelSiteSelect = document.getElementById('excelSiteSelect');
+        const projectSelect = document.getElementById('projectSelect');
+        
         if (!excelSiteSelect.value) {
           showStatus('❌ Please select a site first before uploading Excel file', 'error');
           return;
         }
+        
+        if (!projectSelect.value) {
+          showStatus('❌ Please select a project before uploading Excel file', 'error');
+          return;
+        }
+        
+        const batchSelect = document.getElementById('batchSelect');
+        if (!batchSelect.value) {
+          showStatus('❌ Please select a batch number before uploading Excel file', 'error');
+          return;
+        }
+        
         fileInput.click();
       }
 
@@ -835,8 +1066,12 @@
             const extractedData = extractDeliveryNoteData(workbook);
             console.log('Data extracted:', extractedData);
             
-            // Ensure delivery note is assigned to selected site
+            // Ensure delivery note is assigned to selected site and project
             const selectedSiteCode = document.getElementById('excelSiteSelect').value;
+            const receiveRep = document.getElementById('receiveRep').value;
+            const deliveryRep = document.getElementById('deliveryRep').value;
+            const collectRep = document.getElementById('collectRep').value;
+            
             if (selectedSiteCode) {
               extractedData.deliveryNote.site_Code = selectedSiteCode;
               
@@ -844,6 +1079,31 @@
               extractedData.items.forEach(item => {
                 item.site_code = selectedSiteCode;
               });
+            }
+            
+            // Add project data and representatives
+            if (window.selectedProjectData) {
+              const batchSelect = document.getElementById('batchSelect');
+              extractedData.deliveryNote.Project_code_User = window.selectedProjectData.projectCode;
+              extractedData.deliveryNote.Batch_no_user = batchSelect.value;
+            }
+            
+            // Add representatives (get selected employee names)
+            const receiveRepSelect = document.getElementById('receiveRep');
+            const deliveryRepSelect = document.getElementById('deliveryRep');
+            const collectRepSelect = document.getElementById('collectRep');
+            
+            if (receiveRepSelect.value) {
+              const selectedOption = receiveRepSelect.options[receiveRepSelect.selectedIndex];
+              extractedData.deliveryNote.Receive_Rep = selectedOption.textContent;
+            }
+            if (deliveryRepSelect.value) {
+              const selectedOption = deliveryRepSelect.options[deliveryRepSelect.selectedIndex];
+              extractedData.deliveryNote.Delivery_Rep = selectedOption.textContent;
+            }
+            if (collectRepSelect.value) {
+              const selectedOption = collectRepSelect.options[collectRepSelect.selectedIndex];
+              extractedData.deliveryNote.Collect_Rep = selectedOption.textContent;
             }
 
             updateProgress(90);
@@ -899,54 +1159,47 @@
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
-        const getCellValue = (cellRefs) => {
-          const refs = Array.isArray(cellRefs) ? cellRefs : [cellRefs];
-          for (const cellRef of refs) {
-            const cell = worksheet[cellRef];
-            if (cell && cell.v !== undefined && cell.v !== "") {
-              const value = String(cell.v).trim();
-              return value === "" ? null : value;
-            }
+        const getCellValue = (cellRef) => {
+          const cell = worksheet[cellRef];
+          if (cell && cell.v !== undefined && cell.v !== "") {
+            const value = String(cell.v).trim();
+            return value === "" ? null : value;
           }
           return null;
         };
 
         const deliveryNote = {
-          print_date: formatDateTime(getCellValue(["B2", "A2"])) || getCurrentDateTime(),
-          purpose_of_delivery: getCellValue(["C3", "D3", "E3"]),
-          delivery_address: getCellValue(["C4", "D4", "E4"]),
-          site_Code: getCellValue(["C5", "D5", "E5"]),
-          contract_info: getCellValue(["C6", "D6", "E6"]),
-          Customer: getCellValue(["K8","08"]),
-          Customer_PO: getCellValue(["O8", "O8"]),
-          Customer_Tel: getCellValue(["M4", "L4"]),
-          Project_Name: getCellValue(["C7", "D7", "E7"]),
-          Project_Code: getCellValue(["O7", "O7"]),
-          Product_Category: getCellValue(["C8", "D8", "E8"]),
-          Product_Manager: getCellValue(["K9","09"]),
-          Special_Unloading_Req: getCellValue(["C9", "D9", "E9"]),
-          Installation_Environment: getCellValue(["C10", "D10", "E10"]),
-          Description_MR: getCellValue(["C11", "D11", "E11"]),
-          From_Warehouse: getCellValue(["C12", "D12", "E12"]),
-          Warehouse_Keeper: getCellValue(["G12", "H12"]),
-          Warehouse_Keeper_tel: getCellValue(["O12", "O12"]),
-          Description_DN: getCellValue(["C13", "D13", "E13"]),
-          Including_dangerous_goods: getCellValue(["C14", "D14", "E14"]) || "No",
-          pickup_address: getCellValue(["K3", "03"]),
-          Site_Address: getCellValue(["K4","04"]),
-          dn_no: getCellValue(["O1", "N1", "P1"]) || generateDNNumber(),
-          mr_no: getCellValue(["O2", "N2", "P2"]),
-          receiver_name: getCellValue(["O3", "03"]),
-          receiver_tel: getCellValue(["O4", "04"]),
-          Receiver_Company_Name: getCellValue(["M10", "N10", "O10"]),
-          request_arrived_date: formatDateTime(getCellValue(["K5", "05"])),
-          request_shipment_date: formatDateTime(getCellValue(["O5", "05"])),
-          logistics_specialist: getCellValue(["K6", "06"]),
-          logistics_specialist_Tel: getCellValue(["O6", "06"]),
-          // received_location: getCellValue(["G13", "H13"]),
-          // received_Auto_location: getCellValue(["G14", "H14"]),
-          // Collected_location: getCellValue(["G15", "H15"]),
-         // Collected_Auto_location: getCellValue(["G16", "H16"]),
+          print_date: formatDateTime(getCellValue("B2")) || getCurrentDateTime(),
+          purpose_of_delivery: getCellValue("C3"),
+          delivery_address: getCellValue("C4"),
+          site_Code: getCellValue("C5"),
+          contract_info: getCellValue("C6"),
+          Project_Name: getCellValue("C7"),
+          Customer: getCellValue("I8"),
+          Customer_PO: getCellValue("O8"),
+          Customer_Tel: getCellValue("O4"),
+          Product_Category: getCellValue("C8"),
+          Product_Manager: getCellValue("I9"),
+          Special_Unloading_Req: getCellValue("C9"),
+          Installation_Environment: getCellValue("C10"),
+          Description_MR: getCellValue("C11"),
+          From_Warehouse: getCellValue("C12"),
+          Warehouse_Keeper: getCellValue("I12"),
+          Warehouse_Keeper_tel: getCellValue("O12"),
+          Description_DN: getCellValue("C13"),
+          Including_dangerous_goods: getCellValue("C14") || "No",
+          pickup_address: getCellValue("I3"),
+          Site_Address: getCellValue("I4"),
+          dn_no: getCellValue("O1") || generateDNNumber(),
+          mr_no: getCellValue("O2"),
+          receiver_name: getCellValue("O3"),
+          receiver_tel: getCellValue("O4"),
+          Receiver_Company_Name: getCellValue("O10"),
+          request_arrived_date: formatDateTime(getCellValue("I5")),
+          request_shipment_date: formatDateTime(getCellValue("O5")),
+          logistics_specialist: getCellValue("I6"),
+          logistics_specialist_Tel: getCellValue("O6"),
+          Project_Code: getCellValue("O7"),
           Company_code: '1000'
         };
 
@@ -980,24 +1233,20 @@
         // Get the last row number from sheet reference
         const range = worksheet['!ref'];
         const lastRow = parseInt(range.split(':')[1].replace(/[A-Z]/g, ''));
-        console.log('Processing rows 2 to', lastRow);
+        console.log('Processing rows 3 to', lastRow);
         
-        // Extract items from rows 2 to last row
-        for (let row = 2; row <= lastRow; row++) {
-          const itemCode = getCellValue(`E${row}`);
-          const qty = getCellValue(`F${row}`); 
-          const description = getCellValue(`G${row}`);
+        // Extract items from rows 3 to last row (skip headers in rows 1-2)
+        for (let row = 3; row <= lastRow; row++) {
+          const contractNo = getCellValue(`A${row}`);
+          const customerPoNo = getCellValue(`B${row}`);
+          const itemCode = getCellValue(`C${row}`);
+          const qty = getCellValue(`D${row}`); 
+          const description = getCellValue(`E${row}`);
           
-          console.log(`Row ${row}: Code=${itemCode}, Qty=${qty}, Desc=${description}`);
-          
-          // Skip header rows
-          if (itemCode && (itemCode.toLowerCase().includes('item') || itemCode.toLowerCase().includes('code'))) {
-            console.log(`Skipping header row ${row}`);
-            continue;
-          }
+          console.log(`Row ${row}: Contract=${contractNo}, ItemCode=${itemCode}, Qty=${qty}, Desc=${description}`);
           
           // Skip completely empty rows
-          if (!itemCode && !qty && !description) {
+          if (!contractNo && !itemCode && !qty && !description) {
             continue;
           }
           
@@ -1362,28 +1611,17 @@
           .map(
             (note) => `
           <tr>
-            <td class="col-dn"><strong>${note.dn_no || "N/A"}</strong></td>
+            <td class="col-project"><strong>${note.Project_code_User || "N/A"}</strong></td>
+            <td class="col-batch" title="${note.Batch_no_user || "N/A"}">${truncateText(note.Batch_no_user || "N/A", 15)}</td>
             <td class="col-site">${note.site_Code || "N/A"}</td>
-            <td class="col-project" title="${note.Project_Name || "N/A"}">${truncateText(note.Project_Name || "N/A", 25)}</td>
             <td class="col-manager" title="${note.Product_Manager || "N/A"}">${truncateText(note.Product_Manager || "N/A", 15)}</td>
             <td class="col-warehouse" title="${note.From_Warehouse || "N/A"}">${truncateText(note.From_Warehouse || "N/A", 15)}</td>
+            <td class="col-receive-rep" title="${note.Receive_Rep || "N/A"}">${truncateText(note.Receive_Rep || "N/A", 15)}</td>
+            <td class="col-delivery-rep" title="${note.Delivery_Rep || "N/A"}">${truncateText(note.Delivery_Rep || "N/A", 15)}</td>
             <td class="col-date">${formatDisplayDate(note.request_arrived_date) || "N/A"}</td>
             <td class="col-status"><span class="status-badge status-${(
               note.DN_Status || "created"
-            ).toLowerCase()}">${note.DN_Status || "Created"}</span></td>
-            <td class="col-locations">
-              <div class="location-icons">
-                <button class="location-btn received" onclick="openLocation('${note.received_location || ''}', 'Received')" title="Received location">
-                  <ion-icon name="location" style="pointer-events: none;"></ion-icon>
-                </button>
-                <button class="location-btn delivered" onclick="openLocation('${note.delivered_location || ''}', 'Delivered')" title="Delivered location">
-                  <ion-icon name="location" style="pointer-events: none;"></ion-icon>
-                </button>
-                <button class="location-btn collected" onclick="openLocation('${note.collected_location || ''}', 'Collected')" title="Collected location">
-                  <ion-icon name="location" style="pointer-events: none;"></ion-icon>
-                </button>
-              </div>
-            </td>
+            ).toLowerCase()}">${getStatusDisplayName(note.DN_Status)}</span></td>
             <td class="col-actions">
               <div class="action-buttons">
                 <button class="action-btn view" onclick="viewDeliveryNoteItems('${note.dn_no}')" title="View">
@@ -1403,6 +1641,15 @@
       }
 
       // Utility functions for table
+      function getStatusDisplayName(status) {
+        const statusMap = {
+          'created': 'DN received',
+          'delivered': 'MOS',
+          'received': 'Material Loaded'
+        };
+        return statusMap[status?.toLowerCase()] || status || 'DN received';
+      }
+      
       function truncateText(text, maxLength) {
         return text.length > maxLength
           ? text.substring(0, maxLength) + "..."

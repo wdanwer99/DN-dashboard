@@ -43,12 +43,6 @@
               <span class="links">Finance Management</span>
             </a>
           </li>
-           <li class="navList">
-            <a href="reports.html">
-              <ion-icon name="bar-chart-outline"></ion-icon>
-              <span class="links">Reports</span>
-            </a>
-          </li>
           <li class="nav-divider"></li>
           <li class="navList active">
             <a href="add-site.html">
@@ -66,6 +60,25 @@
             <a href="add_item.html">
               <ion-icon name="cube-outline"></ion-icon>
               <span class="links">Add Item</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="add-project.html">
+              <ion-icon name="briefcase-outline"></ion-icon>
+              <span class="links">Project & Batches</span>
+            </a>
+          </li>
+          <li class="navList">
+            <a href="employee-info.html">
+              <ion-icon name="people-outline"></ion-icon>
+              <span class="links">Employee Info</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
+          <li class="navList">
+            <a href="reports.html">
+              <ion-icon name="bar-chart-outline"></ion-icon>
+              <span class="links">Reports</span>
             </a>
           </li>
         </ul>
@@ -136,6 +149,12 @@
               name="Access_Instructions"
               placeholder="Access Instructions"
             ></textarea>
+            <select id="projectSelect" name="Project_code_User" required onchange="loadBatchesForSite()">
+              <option value="">Select Project</option>
+            </select>
+            <select id="batchSelect" name="Batch_no_user" required disabled>
+              <option value="">Select Batch</option>
+            </select>
             <input type="hidden" name="Company_code" value="1000" />
             <button type="submit">Add Site</button>
           </form>
@@ -157,6 +176,8 @@
                   <th>Site Name</th>
                   <th>Operator</th>
                   <th>Type</th>
+                  <th>Project</th>
+                  <th>Batch</th>
                   <th>Address</th>
                   <th>Location</th>
                   <th>Actions</th>
@@ -182,8 +203,69 @@
       // Auto-load sites on page load
       document.addEventListener('DOMContentLoaded', function() {
         loadSites();
+        loadProjects();
         document.getElementById('siteSearch').addEventListener('input', filterSites);
       });
+      
+      async function loadProjects() {
+        try {
+          const response = await fetch('api/get-projects.php');
+          const result = await response.json();
+          
+          if (result.success) {
+            const projectSelect = document.getElementById('projectSelect');
+            projectSelect.innerHTML = '<option value="">Select Project</option>';
+            
+            // Get unique project codes
+            const uniqueProjects = [...new Map(result.data.map(p => [p.Project_code_User, p])).values()];
+            
+            uniqueProjects.forEach(project => {
+              const option = document.createElement('option');
+              option.value = project.Project_code_User;
+              option.textContent = project.Project_code_User;
+              projectSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading projects:', error);
+        }
+      }
+      
+      async function loadBatchesForSite() {
+        const projectCode = document.getElementById('projectSelect').value;
+        const batchSelect = document.getElementById('batchSelect');
+        
+        if (!projectCode) {
+          batchSelect.innerHTML = '<option value="">Select Batch</option>';
+          batchSelect.disabled = true;
+          return;
+        }
+        
+        try {
+          const formData = new FormData();
+          formData.append('project_code', projectCode);
+          
+          const response = await fetch('api/get-individual-batches.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            batchSelect.innerHTML = '<option value="">Select Batch</option>';
+            result.data.forEach(batch => {
+              const option = document.createElement('option');
+              option.value = batch.Batch_no_user;
+              option.textContent = batch.Batch_no_user;
+              batchSelect.appendChild(option);
+            });
+            batchSelect.disabled = false;
+          }
+        } catch (error) {
+          console.error('Error loading batches:', error);
+        }
+      }
 
       document
         .getElementById("siteForm")
@@ -256,7 +338,7 @@
         if (sites.length === 0) {
           tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="9" class="empty-state">
                             <ion-icon name="location-outline" class="empty-icon"></ion-icon>
                             <br>No sites found
                         </td>
@@ -279,6 +361,8 @@
                       .replace(" ", "-")}">${
               site.Site_Type || "N/A"
             }</span></td>
+                    <td>${site.Project_code_User || "N/A"}</td>
+                    <td>${site.Batch_no_user || "N/A"}</td>
                     <td title="${site.Address || "N/A"}">${truncateText(
               site.Address || "N/A",
               30
@@ -334,6 +418,18 @@
               if (lngField) lngField.value = site.GPS_Longitude || "";
               if (typeField) typeField.value = site.Site_Type || "";
               if (instructionsField) instructionsField.value = site.Access_Instructions || "";
+              
+              // Load project and batch data
+              const projectSelect = document.getElementById('projectSelect');
+              const batchSelect = document.getElementById('batchSelect');
+              
+              if (site.Project_code_User) {
+                projectSelect.value = site.Project_code_User;
+                await loadBatchesForSite();
+                if (site.Batch_no_user) {
+                  batchSelect.value = site.Batch_no_user;
+                }
+              }
               
               editingId = id;
               document.querySelector('button[type="submit"]').textContent = 'Update Site';

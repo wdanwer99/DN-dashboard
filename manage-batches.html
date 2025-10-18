@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Manage Batches - Admin</title>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <div class="logo-image">
+                <img src="assets/logo2.png" alt="Company Logo">
+            </div>
+        </div>
+        <div class="menu-items">
+            <ul class="navLinks">
+                <li class="navList">
+                    <a href="dashboard.html">
+                        <ion-icon name="home-outline"></ion-icon>
+                        <span class="links">Dashboard</span>
+                    </a>
+                </li>
+                <li class="navList active">
+                    <a href="add-project.html">
+                        <ion-icon name="briefcase-outline"></ion-icon>
+                        <span class="links">Project & Batches</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="bottom-link">
+                <li>
+                    <a href="#" onclick="logout()">
+                        <ion-icon name="log-out-outline"></ion-icon>
+                        <span class="links">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="container">
+            <div class="data-table">
+                <div class="title">
+                    <ion-icon name="arrow-back-outline" onclick="goBack()" style="cursor: pointer; margin-right: 10px;"></ion-icon>
+                    <ion-icon name="layers-outline"></ion-icon>
+                    <span class="text">Manage Batches for Project: <span id="projectName"></span></span>
+                </div>
+                <div class="form-grid">
+                    <input type="text" id="newBatchNumber" placeholder="New Batch Number" />
+                    <button type="button" onclick="addBatch()">
+                        <ion-icon name="add-circle-outline"></ion-icon>
+                        Add Batch
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <ion-icon name="list-outline"></ion-icon>
+                    Current Batches
+                </div>
+                <div class="table-scroll">
+                    <table class="delivery-notes-table">
+                        <thead>
+                            <tr>
+                                <th>Batch Number</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        let currentProject = '';
+
+        // Check authentication
+        if (!sessionStorage.getItem('userRole') || sessionStorage.getItem('userRole') !== 'admin') {
+            window.location.href = 'index.html';
+        }
+
+        // Get project from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        currentProject = urlParams.get('project');
+
+        if (!currentProject) {
+            alert('No project specified');
+            window.location.href = 'add-project.html';
+        }
+
+        document.getElementById('projectName').textContent = currentProject;
+
+        // Load batches on page load
+        document.addEventListener('DOMContentLoaded', loadBatches);
+
+        function goBack() {
+            window.location.href = 'add-project.html';
+        }
+
+        async function loadBatches() {
+            try {
+                const formData = new FormData();
+                formData.append('project_code', currentProject);
+
+                const response = await fetch('api/get-individual-batches.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayBatches(result.data);
+                } else {
+                    console.error('Error loading batches:', result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function displayBatches(batches) {
+            const tbody = document.getElementById('batchesTableBody');
+
+            if (batches.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="empty-state">
+                            <ion-icon name="layers-outline" class="empty-icon"></ion-icon>
+                            <br>No batches found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = batches.map(batch => `
+                <tr>
+                    <td><strong>${batch.Batch_no_user}</strong></td>
+                    <td>${formatDate(batch.created_at)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn edit" onclick="editBatch('${batch.Batch_no_user}')" title="Edit Batch">
+                                <ion-icon name="create-outline"></ion-icon>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteBatch('${batch.Batch_no_user}')" title="Delete Batch">
+                                <ion-icon name="trash-outline"></ion-icon>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addBatch() {
+            const batchNumber = document.getElementById('newBatchNumber').value.trim();
+            if (!batchNumber) {
+                alert('Please enter a batch number');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('Project_code_User', currentProject);
+                formData.append('Batch_no_user', batchNumber);
+                formData.append('project_status', 'active');
+
+                const response = await fetch('api/add-project.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Batch added successfully!');
+                    document.getElementById('newBatchNumber').value = '';
+                    loadBatches();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function editBatch(currentBatch) {
+            const newBatch = prompt(`Edit batch number (current: ${currentBatch}):`, currentBatch);
+            if (!newBatch || newBatch === currentBatch) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('project_code', currentProject);
+                formData.append('old_batch', currentBatch);
+                formData.append('new_batch', newBatch);
+
+                const response = await fetch('api/update-single-batch.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Batch updated successfully!');
+                    loadBatches();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function deleteBatch(batchNumber) {
+            if (!confirm(`Delete batch '${batchNumber}'?`)) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('project_code', currentProject);
+                formData.append('batch_number', batchNumber);
+
+                const response = await fetch('api/delete-single-batch.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Batch deleted successfully!');
+                    loadBatches();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return "N/A";
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+        }
+    </script>
+
+    <script src="js/session.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

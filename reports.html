@@ -91,12 +91,6 @@
                         <span class="links">Finance Management</span>
                     </a>
                 </li>
-                <li class="navList active">
-                    <a href="reports.html">
-                        <ion-icon name="bar-chart-outline"></ion-icon>
-                        <span class="links">Reports</span>
-                    </a>
-                </li>
                 <li class="nav-divider"></li>
                 <li class="navList">
                     <a href="add-site.html">
@@ -114,6 +108,25 @@
                     <a href="add_item.html">
                         <ion-icon name="cube-outline"></ion-icon>
                         <span class="links">Add Item</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="add-project.html">
+                        <ion-icon name="briefcase-outline"></ion-icon>
+                        <span class="links">Project & Batches</span>
+                    </a>
+                </li>
+                <li class="navList">
+                    <a href="employee-info.html">
+                        <ion-icon name="people-outline"></ion-icon>
+                        <span class="links">Employee Info</span>
+                    </a>
+                </li>
+                <li class="nav-divider"></li>
+                <li class="navList active">
+                    <a href="reports.html">
+                        <ion-icon name="bar-chart-outline"></ion-icon>
+                        <span class="links">Reports</span>
                     </a>
                 </li>
             </ul>
@@ -542,6 +555,7 @@
             const siteFilter = document.getElementById('siteFilter').value;
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
+            const reportType = document.getElementById('reportType').value;
 
             filteredData = currentReportData.filter(item => {
                 let matches = true;
@@ -551,12 +565,21 @@
                     matches = matches && searchableText.includes(searchTerm);
                 }
 
-                if (statusFilter && item.status) {
-                    matches = matches && item.status === statusFilter;
+                if (statusFilter) {
+                    let itemStatus = '';
+                    if (reportType === 'trips-cars') {
+                        itemStatus = item.status;
+                    } else if (reportType === 'payments') {
+                        itemStatus = item.payment_status;
+                    } else {
+                        itemStatus = item.DN_Status;
+                    }
+                    matches = matches && itemStatus === statusFilter;
                 }
 
-                if (siteFilter && item.site_code) {
-                    matches = matches && item.site_code === siteFilter;
+                if (siteFilter) {
+                    const itemSite = item.site_Code || item.site_code;
+                    matches = matches && itemSite === siteFilter;
                 }
 
                 if (dateFrom && item.created_at) {
@@ -570,7 +593,6 @@
                 return matches;
             });
 
-            const reportType = document.getElementById('reportType').value;
             displayReport(reportType, filteredData);
         }
 

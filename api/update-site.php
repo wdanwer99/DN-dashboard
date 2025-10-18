@@ -14,7 +14,7 @@ try {
         throw new Exception('Site ID is required');
     }
 
-    $sql = "UPDATE Site_Details SET site_Code=?, Site_Name=?, Tel_Operator=?, Address=?, GPS_Latitude=?, GPS_Longitude=?, Site_Type=?, Access_Instructions=?, Company_code=? WHERE id=?";
+    $sql = "UPDATE Site_Details SET site_Code=?, Site_Name=?, Tel_Operator=?, Address=?, GPS_Latitude=?, GPS_Longitude=?, Site_Type=?, Access_Instructions=?, Company_code=?, Project_code_User=?, Batch_no_user=? WHERE id=?";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
@@ -27,6 +27,8 @@ try {
         $_POST['Site_Type'] ?? null,
         $_POST['Access_Instructions'] ?? null,
         $_POST['Company_code'] ?? null,
+        $_POST['Project_code_User'] ?? null,
+        $_POST['Batch_no_user'] ?? null,
         $id
     ]);
 
