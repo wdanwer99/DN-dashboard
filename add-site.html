@@ -144,6 +144,11 @@
               <option value="Rooftop">Rooftop</option>
               <option value="Indoor">Indoor</option>
               <option value="Small Cell">Small Cell</option>
+ <option value="Microwave ">Microwave </option>
+ <option value="Power">Power</option>
+ <option value="Wireless">Wireless</option>
+ <option value="Solar">Solar</option>
+<option value="ATS">ATS</option>
             </select>
             <textarea
               name="Access_Instructions"
@@ -209,7 +214,12 @@
       
       async function loadProjects() {
         try {
-          const response = await fetch('api/get-projects.php');
+          const response = await fetch('api/get-projects.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
           const result = await response.json();
           
           if (result.success) {

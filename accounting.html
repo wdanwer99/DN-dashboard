@@ -7,6 +7,71 @@
     <link rel="stylesheet" href="global-loader.css">
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <style>
+        .delivery-notes-table {
+            table-layout: fixed;
+            width: 100%;
+            min-width: 1200px;
+        }
+        .delivery-notes-table th,
+        .delivery-notes-table td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 8px 4px;
+            font-size: 12px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .table-scroll {
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .table-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+            min-width: 160px;
+            flex-wrap: nowrap;
+        }
+        .action-btn {
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-btn:hover {
+            background: #f5f5f5;
+        }
+        .action-btn ion-icon {
+            font-size: 14px;
+        }
+    </style>
     <title>Accounting Dashboard</title>
 </head>
 <body>
@@ -108,7 +173,7 @@
             <div class="upload-form">
                 <form id="accountForm" class="form-grid">
                     <select id="assignmentSelect" required>
-                        <option value="">Select Trip Assignment</option>
+                        <option value="">Assignment ID</option>
                     </select>
                     
                     <input type="number" id="cost" placeholder="Total Cost" step="0.01" required>
@@ -116,6 +181,12 @@
                     <input type="number" id="advancePayment" placeholder="Advance Payment" step="0.01" required>
                     
                     <input type="number" id="goveFees" placeholder="Government Fees" step="0.01" required>
+                    
+                    <input type="number" id="loadingAmount" placeholder="Loading Amount" step="1" required>
+                    
+                    <input type="number" id="distributionAmount" placeholder="Distribution Amount" step="1" required>
+                    
+                    <input type="number" id="offLoadingCost" placeholder="Off Loading Cost" step="1" required>
                     
                     <select id="paymentStatus" required>
                         <option value="Unpaid">Unpaid</option>
@@ -136,37 +207,75 @@
 
             <div id="message" class="upload-status hidden"></div>
             
+            <!-- Search Section -->
+            <div class="upload-form">
+                <h3>
+                    <ion-icon name="search-outline"></ion-icon>
+                    Search Account Records
+                </h3>
+                <div class="form-grid">
+                    <input type="text" id="searchAssignment" placeholder="Search by Assignment ID">
+                    <input type="text" id="searchTruck" placeholder="Search by Truck">
+                    <input type="text" id="searchDN" placeholder="Search by DN Number" style="display: none;">
+                    <button type="button" onclick="clearSearch()">
+                        <ion-icon name="refresh-outline"></ion-icon>
+                        Clear Search
+                    </button>
+                </div>
+            </div>
+            
             <!-- Accounts Table -->
             <div class="table-container" style="display: block;">
                 <div class="table-header">
-                    <ion-icon name="list-outline"></ion-icon>
-                    All Account Records
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div>
+                            <ion-icon name="list-outline"></ion-icon>
+                            All Account Records
+                        </div>
+                        <button class="upload-btn secondary" onclick="exportToCSV()" style="margin: 0;">
+                            <ion-icon name="download-outline"></ion-icon>
+                            Export CSV
+                        </button>
+                    </div>
                 </div>
-                <table class="delivery-notes-table">
-                    <thead>
-                        <tr>
-                            <th>Assignment ID</th>
-                            <th>Site</th>
-                            <th>DN No</th>
-                            <th>Truck</th>
-                            <th>Cost</th>
-                            <th>Advance</th>
-                            <th>Gov Fees</th>
-                            <th>Balance</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="accountsTableBody">
-                        <tr>
-                            <td colspan="11" class="empty-state">
-                                <div class="loading-spinner"></div>
-                                <br>Loading accounts...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-scroll">
+                    <table class="delivery-notes-table">
+                        <thead>
+                            <tr>
+                                <th>Assignment Name</th>
+                                <th>Assignment ID</th>
+                                <th>Truck</th>
+                                <th>Cost</th>
+                                <th>Advance</th>
+                                <th>Gov Fees</th>
+                                <!-- <th>Balance</th> -->
+                                <th>Truck Remaining</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th style="min-width: 160px; width: 160px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountsTableBody">
+                            <tr>
+                                <td colspan="10" class="empty-state">
+                                    <div class="loading-spinner"></div>
+                                    <br>Loading accounts...
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr id="paginationRow" style="display: none;">
+                                <td colspan="10" style="text-align: center; padding: 15px; background: #f8f9fa; border-top: 2px solid #dee2e6;">
+                                    <div id="pagination" style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+                                        <button id="prevBtn" onclick="changeAccountPage(-1)" style="padding: 8px 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Previous</button>
+                                        <span id="pageInfo" style="font-weight: 500;"></span>
+                                        <button id="nextBtn" onclick="changeAccountPage(1)" style="padding: 8px 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Next</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
     </section>
@@ -195,32 +304,45 @@
             `;
         }
 
+        let allAccounts = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        
         document.addEventListener('DOMContentLoaded', function() {
             loadAssignments();
             loadAccounts();
             
             document.getElementById('accountForm').addEventListener('submit', handleSubmit);
+            
+            // Add search event listeners
+            document.getElementById('searchAssignment').addEventListener('input', filterAccounts);
+            document.getElementById('searchTruck').addEventListener('input', filterAccounts);
+            document.getElementById('searchDN').addEventListener('input', filterAccounts);
         });
 
         async function loadAssignments() {
             try {
-                const response = await fetch('api/get-trips.php', {
+                const response = await fetch('api/get-truck-assignments.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
                 const result = await response.json();
                 
-                if (result.success) {
+                if (result.success && result.data) {
                     const select = document.getElementById('assignmentSelect');
-                    result.data.forEach(trip => {
+                    select.innerHTML = '<option value="">Select Assignment ID</option>';
+                    
+                    result.data.forEach(assignment => {
                         const option = document.createElement('option');
-                        option.value = trip.assignment_id;
-                        option.textContent = `${trip.assignment_id} - ${trip.site_Code} (${trip.dn_no})`;
+                        option.value = assignment.assignment_id;
+                        option.textContent = `${assignment.assignment_id} - ${assignment.Assigment_name || 'N/A'}`;
                         select.appendChild(option);
                     });
+                } else {
+                    showMessage('Failed to load assignments: ' + (result.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showMessage('Error loading assignments', 'error');
+                showMessage('Error loading assignments: ' + error.message, 'error');
             }
         }
 
@@ -235,7 +357,8 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    displayAccounts(result.data);
+                    allAccounts = result.data;
+                    displayAccounts(allAccounts);
                 } else {
                     globalLoader.showMessage('Error loading accounts', 'error');
                 }
@@ -252,39 +375,71 @@
             if (accounts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="11" class="empty-state">
+                        <td colspan="10" class="empty-state">
                             <ion-icon name="calculator-outline" class="empty-icon"></ion-icon>
                             <br>No account records found
                         </td>
                     </tr>
                 `;
+                document.getElementById('paginationRow').style.display = 'none';
                 return;
             }
             
-            tbody.innerHTML = accounts.map(account => `
+            // Client-side pagination - show only 10 per page
+            const itemsPerPage = 10;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedAccounts = accounts.slice(startIndex, endIndex);
+            
+            // Update pagination controls
+            totalPages = Math.ceil(accounts.length / itemsPerPage);
+            const paginationRow = document.getElementById('paginationRow');
+            const pageInfo = document.getElementById('pageInfo');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (accounts.length > 10) {
+                pageInfo.textContent = `Page ${currentPage} of ${totalPages} (${accounts.length} total)`;
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages;
+                paginationRow.style.display = 'table-row';
+            } else {
+                paginationRow.style.display = 'none';
+            }
+            
+            tbody.innerHTML = paginatedAccounts.map(account => {
+                const truckRemaining = parseFloat(account.cost || 0) - parseFloat(account.advance_payment || 0) - parseFloat(account.Gove_Fees || 0);
+                return `
                 <tr>
-                    <td><strong>${account.assignment_id}</strong></td>
-                    <td>${account.site_Code || 'N/A'}</td>
-                    <td>${account.dn_no || 'N/A'}</td>
+                    <td><strong>${account.Assigment_name || 'N/A'}</strong></td>
+                    <td>${account.assignment_id}</td>
                     <td>${account.truck_no || 'N/A'}</td>
-                    <td>${parseFloat(account.cost).toFixed(2)} SDG</td>
-                    <td>${parseFloat(account.advance_payment).toFixed(2)} SDG</td>
-                    <td>${parseFloat(account.Gove_Fees).toFixed(2)} SDG</td>
-                    <td>${parseFloat(account.balance).toFixed(2)} SDG</td>
+                    <td>${parseFloat(account.cost || 0).toFixed(2)} SDG</td>
+                    <td>${parseFloat(account.advance_payment || 0).toFixed(2)} SDG</td>
+                    <td>${parseFloat(account.Gove_Fees || 0).toFixed(2)} SDG</td>
+                    <td><strong>${truckRemaining.toFixed(2)} SDG</strong></td>
                     <td>${new Date(account.created_at).toLocaleDateString()}</td>
                     <td><span class="status-badge status-${account.payment_status.toLowerCase()}">${account.payment_status}</span></td>
                     <td>
                         <div class="action-buttons">
+                             <button class="action-btn" onclick="managePayments(${account.assignment_id})" title="Manage Payments">
+                                <ion-icon name="card-outline" style="pointer-events: none;"></ion-icon>
+                            </button>
                             <button class="action-btn view" onclick="viewRecordDetails(${account.assignment_id})" title="View Details">
                                 <ion-icon name="eye-outline" style="pointer-events: none;"></ion-icon>
                             </button>
-                            <button class="action-btn edit" onclick="managePayments(${account.assignment_id})" title="Manage Payments">
-                                <ion-icon name="card-outline" style="pointer-events: none;"></ion-icon>
+                           
+                            <button class="action-btn edit" onclick="editAccount(${account.id})" title="Edit Account">
+                                <ion-icon name="create-outline" style="pointer-events: none;"></ion-icon>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteAccount(${account.id})" title="Delete Account">
+                                <ion-icon name="trash-outline" style="pointer-events: none;"></ion-icon>
                             </button>
                         </div>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         async function handleSubmit(e) {
@@ -295,6 +450,9 @@
                 cost: document.getElementById('cost').value,
                 advance_payment: document.getElementById('advancePayment').value,
                 Gove_Fees: document.getElementById('goveFees').value,
+                loading_amount: document.getElementById('loadingAmount').value,
+                distribution_amount: document.getElementById('distributionAmount').value,
+                off_loading_cost: document.getElementById('offLoadingCost').value,
                 payment_status: document.getElementById('paymentStatus').value,
                 payment_date: document.getElementById('paymentDate').value,
                 remarks: document.getElementById('remarks').value,
@@ -336,6 +494,164 @@
         
         function managePayments(assignmentId) {
             window.location.href = `payment-management.html?assignment=${assignmentId}`;
+        }
+        
+        function filterAccounts() {
+            const searchAssignment = document.getElementById('searchAssignment').value.toLowerCase();
+            const searchTruck = document.getElementById('searchTruck').value.toLowerCase();
+            const searchDN = document.getElementById('searchDN').value.toLowerCase();
+            
+            const filteredAccounts = allAccounts.filter(account => {
+                const matchesAssignment = !searchAssignment || (account.assignment_id && account.assignment_id.toString().toLowerCase().includes(searchAssignment));
+                const matchesTruck = !searchTruck || (account.truck_no && account.truck_no.toLowerCase().includes(searchTruck));
+                const matchesDN = !searchDN || (account.dn_no && account.dn_no.toLowerCase().includes(searchDN));
+                
+                return matchesAssignment && matchesTruck && matchesDN;
+            });
+            
+            currentPage = 1; // Reset to first page when filtering
+            displayAccounts(filteredAccounts);
+        }
+        
+        function changeAccountPage(direction) {
+            currentPage += direction;
+            displayAccounts(allAccounts);
+        }
+        
+        function clearSearch() {
+            document.getElementById('searchAssignment').value = '';
+            document.getElementById('searchTruck').value = '';
+            document.getElementById('searchDN').value = '';
+            currentPage = 1; // Reset to first page when clearing search
+            displayAccounts(allAccounts);
+        }
+        
+        function exportToCSV() {
+            if (allAccounts.length === 0) {
+                showMessage('No data to export', 'error');
+                return;
+            }
+            
+            const headers = ['Assignment Name', 'Assignment ID', 'Truck', 'Cost', 'Advance', 'Gov Fees', 'Truck Remaining', 'Date', 'Status'];
+            const csvContent = [headers.join(',')];
+            
+            allAccounts.forEach(account => {
+                const truckRemaining = parseFloat(account.cost || 0) - parseFloat(account.advance_payment || 0) - parseFloat(account.Gove_Fees || 0);
+                const row = [
+                    account.Assigment_name || '',
+                    account.assignment_id || '',
+                    account.truck_no || '',
+                    parseFloat(account.cost || 0).toFixed(2),
+                    parseFloat(account.advance_payment || 0).toFixed(2),
+                    parseFloat(account.Gove_Fees || 0).toFixed(2),
+                    //parseFloat(account.balance || 0).toFixed(2),
+                    truckRemaining.toFixed(2),
+                    new Date(account.created_at).toLocaleDateString(),
+                    account.payment_status || ''
+                ];
+                csvContent.push(row.join(','));
+            });
+            
+            const csvString = csvContent.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `accounting_records_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showMessage('CSV file exported successfully', 'success');
+        }
+        
+        async function editAccount(id) {
+            const account = allAccounts.find(acc => acc.id == id);
+            if (!account) return;
+            
+            // Populate form with existing data
+            document.getElementById('assignmentSelect').value = account.assignment_id;
+            document.getElementById('cost').value = account.cost;
+            document.getElementById('advancePayment').value = account.advance_payment;
+            document.getElementById('goveFees').value = account.Gove_Fees;
+            document.getElementById('paymentStatus').value = account.payment_status;
+            document.getElementById('paymentDate').value = account.payment_date ? account.payment_date.split(' ')[0] : '';
+            document.getElementById('remarks').value = account.remarks || '';
+            
+            // Change form to edit mode
+            const submitBtn = document.querySelector('#accountForm button[type="submit"]');
+            submitBtn.innerHTML = '<ion-icon name="save-outline"></ion-icon> Update Account';
+            submitBtn.onclick = (e) => updateAccount(e, id);
+            
+            // Scroll to form
+            document.getElementById('accountForm').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        async function updateAccount(e, id) {
+            e.preventDefault();
+            
+            const formData = {
+                id: id,
+                assignment_id: document.getElementById('assignmentSelect').value,
+                cost: document.getElementById('cost').value,
+                advance_payment: document.getElementById('advancePayment').value,
+                Gove_Fees: document.getElementById('goveFees').value,
+                payment_status: document.getElementById('paymentStatus').value,
+                payment_date: document.getElementById('paymentDate').value,
+                remarks: document.getElementById('remarks').value
+            };
+            
+            try {
+                const response = await fetch('api/update-account.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Account updated successfully!', 'success');
+                    resetForm();
+                    loadAccounts();
+                } else {
+                    showMessage('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error updating account', 'error');
+            }
+        }
+        
+        async function deleteAccount(id) {
+            if (!confirm('Are you sure you want to delete this account record?')) return;
+            
+            try {
+                const response = await fetch('api/delete-account.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Account deleted successfully!', 'success');
+                    loadAccounts();
+                } else {
+                    showMessage('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Error deleting account', 'error');
+            }
+        }
+        
+        function resetForm() {
+            document.getElementById('accountForm').reset();
+            const submitBtn = document.querySelector('#accountForm button[type="submit"]');
+            submitBtn.innerHTML = '<ion-icon name="add-outline"></ion-icon> Add Account Record';
+            submitBtn.onclick = null;
         }
     </script>
     

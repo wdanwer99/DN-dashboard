@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="global-loader.css">
+    <style>
+        .delivery-notes-table th,
+        .delivery-notes-table td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 80px;
+            max-width: 200px;
+            width: 25ch;
+        }
+        .delivery-notes-table {
+            table-layout: auto;
+            width: 100%;
+        }
+    </style>
     <title>Add Trip - Admin</title>
 </head>
 <body>
@@ -99,6 +114,8 @@
 
             <div class="upload-form">
                 <form id="tripForm" class="form-grid">
+                    <input type="text" id="assignmentName" placeholder="Assignment Name" required>
+                    
                     <select id="siteSelect" required>
                         <option value="">Select Site</option>
                     </select>
@@ -159,6 +176,7 @@
                 <table class="delivery-notes-table">
                     <thead>
                         <tr>
+                            <th>Assignment Name</th>
                             <th>Assignment ID</th>
                             <th>Site</th>
                             <th>DN No</th>
@@ -170,7 +188,7 @@
                     </thead>
                     <tbody id="tripsTableBody">
                         <tr>
-                            <td colspan="7" class="empty-state">
+                            <td colspan="8" class="empty-state">
                                 <div class="loading-spinner"></div>
                                 <br>Loading trips...
                             </td>
@@ -349,12 +367,13 @@
         async function handleSubmit(e) {
             e.preventDefault();
             
+            const assignmentName = document.getElementById('assignmentName').value;
             const siteCode = document.getElementById('siteSelect').value;
             const dnNos = document.getElementById('selectedDNs').value;
             const truckId = document.getElementById('truckSelect').value;
             const status = document.getElementById('statusSelect').value;
             
-            if (!siteCode || !dnNos || !truckId || !status) {
+            if (!assignmentName || !siteCode || !dnNos || !truckId || !status) {
                 globalLoader.showMessage('Please fill all required fields', 'error');
                 return;
             }
@@ -369,7 +388,8 @@
                     dn_no: dnNo.trim(),
                     truck_id: parseInt(truckId),
                     status: status,
-                    Company_code: '1000'
+                    Company_code: '1000',
+                    Assigment_name: assignmentName
                 };
                 
                 return fetch('api/add-trip.php', {
@@ -436,7 +456,7 @@
             if (trips.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="8" class="empty-state">
                             <ion-icon name="car-sport-outline" class="empty-icon"></ion-icon>
                             <br>No trips found
                         </td>
@@ -447,7 +467,8 @@
             
             tbody.innerHTML = trips.map(trip => `
                 <tr>
-                    <td><strong>${trip.assignment_id}</strong></td>
+                    <td><strong>${trip.Assigment_name || 'N/A'}</strong></td>
+                    <td>${trip.assignment_id}</td>
                     <td>${trip.site_Code} - ${trip.Site_Name || 'N/A'}</td>
                     <td>${trip.dn_no}</td>
                     <td>${trip.truck_no || 'N/A'}</td>

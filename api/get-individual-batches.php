@@ -9,7 +9,7 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    $sql = "SELECT id, Project_code_User, Batch_no_user FROM project_info WHERE Project_code_User = ? ORDER BY Batch_no_user";
+    $sql = "SELECT id, Project_code_User, Batch_no_user, created_at FROM project_info WHERE Project_code_User = ? ORDER BY Batch_no_user";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$_POST['project_code'] ?? null]);
     

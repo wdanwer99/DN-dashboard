@@ -16,8 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $stmt = $pdo->prepare("INSERT INTO truck_assignments (
-            assignment_id, site_Code, dn_no, truck_id, status, Company_code
-        ) VALUES (?, ?, ?, ?, ?, ?)");
+            assignment_id, site_Code, dn_no, truck_id, status, Company_code, Assigment_name
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)");
         
         $result = $stmt->execute([
             $data['assignment_id'],
@@ -25,7 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data['dn_no'],
             $data['truck_id'],
             $data['status'],
-            $data['Company_code']
+            $data['Company_code'],
+            $data['Assigment_name']
         ]);
         
         if ($result) {

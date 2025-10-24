@@ -24,38 +24,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception('Site code is required');
         }
 
-    // Get total count
-    $countStmt = $pdo->prepare("SELECT COUNT(*) as total FROM Delivery_Notes WHERE site_Code = ?");
-    $countStmt->execute([$siteCode]);
-    $totalCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        // Simple query - no user filtering
+        $whereClause = "dn.site_Code = ?";
+        $params = [$siteCode];
 
-    // Get paginated results with items count
-    $stmt = $pdo->prepare("
-        SELECT dn.*, 
-               COALESCE(COUNT(di.id), 0) as items_count
-        FROM Delivery_Notes dn 
-        LEFT JOIN dn_items di ON dn.dn_no = di.dn_no 
-        WHERE dn.site_Code = ? 
-        GROUP BY dn.dn_no 
-        ORDER BY dn.created_at DESC 
-        LIMIT $offset, $limit
-    ");
-    $stmt->execute([$siteCode]);
-    $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Get total count
+        $countSql = "SELECT COUNT(*) as total FROM Delivery_Notes dn WHERE $whereClause";
+        $countStmt = $pdo->prepare($countSql);
+        $countStmt->execute($params);
+        $totalCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-    echo json_encode([
-        'success' => true, 
-        'data' => $notes,
-        'total' => $totalCount,
-        'page' => $page,
-        'limit' => $limit,
-        'totalPages' => ceil($totalCount / $limit)
-    ]);
+        // Get paginated results with items count
+        $dataSql = "
+            SELECT dn.*, 
+                   COALESCE(COUNT(di.id), 0) as items_count
+            FROM Delivery_Notes dn 
+            LEFT JOIN dn_items di ON dn.dn_no = di.dn_no 
+            WHERE $whereClause
+            GROUP BY dn.dn_no 
+            ORDER BY dn.created_at DESC 
+            LIMIT $offset, $limit
+        ";
+        
+        $stmt = $pdo->prepare($dataSql);
+        $stmt->execute($params);
+        $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'success' => true, 
+            'data' => $notes,
+            'total' => $totalCount,
+            'page' => $page,
+            'limit' => $limit,
+            'totalPages' => ceil($totalCount / $limit)
+        ]);
 
     } catch(Exception $e) {
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        echo json_encode([
+            'success' => false, 
+            'error' => $e->getMessage()
+        ]);
     }
 } else {
-    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Invalid request method'
+    ]);
 }
 ?>

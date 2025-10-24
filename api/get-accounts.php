@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 taa.*,
                 ta.site_Code, 
                 ta.dn_no, 
+                ta.Assigment_name,
                 t.truck_no, 
                 t.driver_name,
                 (taa.cost - taa.advance_payment - COALESCE(taa.Gove_Fees, 0)) as balance

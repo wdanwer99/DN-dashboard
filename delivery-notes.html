@@ -78,12 +78,13 @@
         border: 1px solid #ddd;
         border-radius: 8px;
       }
-      .delivery-notes-table {
-        min-width: 1200px;
-        width: 100%;
-        border-collapse: collapse;
-        margin: 0;
-      }
+	  .delivery-notes-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto; /* Let browser size columns by content */
+  white-space: nowrap; /* Prevent text from wrapping to keep widths accurate */
+}
+
       .table-scroll-wrapper::-webkit-scrollbar {
         height: 8px;
       }
@@ -329,67 +330,7 @@
             <!-- Upload Status -->
             <div id="uploadStatus" class="upload-status"></div>
 
-            <!-- Manual Upload Form -->
-            <!-- <div id="uploadForm" class="upload-form hidden">
-              <h3>
-                <ion-icon name="add-circle-outline"></ion-icon>
-                Add New Delivery Note
-              </h3>
-              <form id="deliveryNoteForm" onsubmit="submitDeliveryNote(event)">
-                <input type="text" id="dnNo" placeholder="DN Number" required />
-                <input type="text" id="mrNo" placeholder="MR Number" />
-                <input
-                  type="text"
-                  id="customer"
-                  placeholder="Customer"
-                  required
-                />
-                <input
-                  type="text"
-                  id="projectName"
-                  placeholder="Project Name"
-                  required
-                />
-                <select id="siteSelect" required>
-                  <option value="">Select Site</option>
-                </select>
-                <input
-                  type="text"
-                  id="siteAddress"
-                  placeholder="Site Address"
-                  readonly
-                />
-                <input
-                  type="text"
-                  id="contractInfo"
-                  placeholder="Contract Info"
-                />
-                <input
-                  type="text"
-                  id="fromWarehouse"
-                  placeholder="From Warehouse"
-                />
-                <input
-                  type="text"
-                  id="receiverName"
-                  placeholder="Receiver Name"
-                />
-                <input type="tel" id="customerTel" placeholder="Customer Tel" />
-                <textarea
-                  id="purposeDelivery"
-                  placeholder="Purpose of Delivery"
-                  rows="3"
-                ></textarea>
-                <button type="submit">
-                  <ion-icon name="save-outline"></ion-icon>
-                  Save to Database
-                </button>
-                <button type="button" onclick="toggleUploadForm()">
-                  <ion-icon name="close-outline"></ion-icon>
-                  Cancel
-                </button>
-              </form>
-            </div> -->
+         
 
             <!-- Processed Excel Data Display -->
             <div id="excelData" class="excel-data hidden">
@@ -436,8 +377,6 @@
                   <th class="col-project">Project</th>
                   <th class="col-batch">Batch No</th>
                   <th class="col-site">Site</th>
-                  <th class="col-manager">Manager</th>
-                  <th class="col-warehouse">Warehouse</th>
                   <th class="col-receive-rep">Receive Rep</th>
                   <th class="col-delivery-rep">Delivery Rep</th>
                   <th class="col-date">Date</th>
@@ -779,7 +718,12 @@
 
       async function loadProjects() {
         try {
-          const response = await fetch('api/get-projects.php');
+          const response = await fetch('api/get-projects.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
           const result = await response.json();
           
           if (result.success) {
@@ -895,13 +839,15 @@
         if (!projectCode || !batchNumber) return;
         
         try {
-          const formData = new FormData();
-          formData.append('project_code', projectCode);
-          formData.append('batch_number', batchNumber);
-          
           const response = await fetch('api/get-sites-by-batch.php', {
             method: 'POST',
-            body: formData
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              project_code: projectCode,
+              batch_number: batchNumber
+            })
           });
           
           const result = await response.json();
@@ -1168,6 +1114,13 @@
           return null;
         };
 
+        // Debug customer field extraction
+        const customerI8 = getCellValue("I8");
+        const customerI7 = getCellValue("I7");
+        const customerH8 = getCellValue("H8");
+        const customerJ8 = getCellValue("J8");
+        console.log('Customer field extraction:', { K8: customerJ8 });
+
         const deliveryNote = {
           print_date: formatDateTime(getCellValue("B2")) || getCurrentDateTime(),
           purpose_of_delivery: getCellValue("C3"),
@@ -1175,29 +1128,29 @@
           site_Code: getCellValue("C5"),
           contract_info: getCellValue("C6"),
           Project_Name: getCellValue("C7"),
-          Customer: getCellValue("I8"),
+          Customer: getCellValue("K8"),
           Customer_PO: getCellValue("O8"),
           Customer_Tel: getCellValue("O4"),
           Product_Category: getCellValue("C8"),
-          Product_Manager: getCellValue("I9"),
+          Product_Manager: getCellValue("K9"),
           Special_Unloading_Req: getCellValue("C9"),
           Installation_Environment: getCellValue("C10"),
           Description_MR: getCellValue("C11"),
           From_Warehouse: getCellValue("C12"),
-          Warehouse_Keeper: getCellValue("I12"),
+          Warehouse_Keeper: getCellValue("K12"),
           Warehouse_Keeper_tel: getCellValue("O12"),
           Description_DN: getCellValue("C13"),
           Including_dangerous_goods: getCellValue("C14") || "No",
-          pickup_address: getCellValue("I3"),
-          Site_Address: getCellValue("I4"),
+          pickup_address: getCellValue("K3"),
+          Site_Address: getCellValue("K4"),
           dn_no: getCellValue("O1") || generateDNNumber(),
           mr_no: getCellValue("O2"),
           receiver_name: getCellValue("O3"),
           receiver_tel: getCellValue("O4"),
           Receiver_Company_Name: getCellValue("O10"),
-          request_arrived_date: formatDateTime(getCellValue("I5")),
+          request_arrived_date: formatDateTime(getCellValue("K5")),
           request_shipment_date: formatDateTime(getCellValue("O5")),
-          logistics_specialist: getCellValue("I6"),
+          logistics_specialist: getCellValue("K6"),
           logistics_specialist_Tel: getCellValue("O6"),
           Project_Code: getCellValue("O7"),
           Company_code: '1000'
@@ -1614,8 +1567,6 @@
             <td class="col-project"><strong>${note.Project_code_User || "N/A"}</strong></td>
             <td class="col-batch" title="${note.Batch_no_user || "N/A"}">${truncateText(note.Batch_no_user || "N/A", 15)}</td>
             <td class="col-site">${note.site_Code || "N/A"}</td>
-            <td class="col-manager" title="${note.Product_Manager || "N/A"}">${truncateText(note.Product_Manager || "N/A", 15)}</td>
-            <td class="col-warehouse" title="${note.From_Warehouse || "N/A"}">${truncateText(note.From_Warehouse || "N/A", 15)}</td>
             <td class="col-receive-rep" title="${note.Receive_Rep || "N/A"}">${truncateText(note.Receive_Rep || "N/A", 15)}</td>
             <td class="col-delivery-rep" title="${note.Delivery_Rep || "N/A"}">${truncateText(note.Delivery_Rep || "N/A", 15)}</td>
             <td class="col-date">${formatDisplayDate(note.request_arrived_date) || "N/A"}</td>

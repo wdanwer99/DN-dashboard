@@ -220,7 +220,12 @@
         globalLoader.show('Loading projects...');
         
         try {
-          const response = await fetch("api/get-projects.php");
+          const response = await fetch("api/get-projects.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          });
           const result = await response.json();
 
           if (result.success) {
@@ -448,7 +453,12 @@
 
       async function loadExistingProjects() {
         try {
-          const response = await fetch("api/get-projects.php");
+          const response = await fetch("api/get-projects.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          });
           const result = await response.json();
 
           if (result.success) {
